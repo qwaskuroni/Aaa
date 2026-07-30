@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Visual Auto Clicker</string>
+    <string name="accessibility_service_label">Visual Auto Clicker Service</string>
+    <string name="accessibility_service_description">Required to perform automatic clicks, taps, long presses, and swipe gestures on screen for automation macros and accessibility assistance.</string>
+    <string name="notification_channel_name">Auto Clicker Foreground Service</string>
+    <string name="notification_channel_description">Keeps the floating overlay panel active during automation.</string>
+    <string name="notification_title">Visual Auto Clicker Active</string>
+    <string name="notification_text">Floating control bar is running. Tap to open app.</string>
+</resources>

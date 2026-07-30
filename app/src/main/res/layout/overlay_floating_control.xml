@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/floatingBarContainer"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="#E60F172A"
+    android:elevation="12dp"
+    android:orientation="vertical"
+    android:padding="6dp">
+
+    <ImageView
+        android:id="@+id/btnDragHandle"
+        android:layout_width="36dp"
+        android:layout_height="20dp"
+        android:layout_gravity="center_horizontal"
+        android:contentDescription="Drag Handle"
+        android:src="@android:drawable/ic_menu_sort_by_size"
+        android:tint="#00E5FF" />
+
+    <ImageButton
+        android:id="@+id/btnPlayPause"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Play or Pause"
+        android:src="@android:drawable/ic_media_play"
+        android:tint="#00E5FF" />
+
+    <ImageButton
+        android:id="@+id/btnStop"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Stop Script Execution"
+        android:src="@android:drawable/ic_media_pause"
+        android:tint="#EF4444"
+        android:visibility="gone" />
+
+    <ImageButton
+        android:id="@+id/btnAddTarget"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Add Tap Target"
+        android:src="@android:drawable/ic_input_add"
+        android:tint="#38BDF8" />
+
+    <ImageButton
+        android:id="@+id/btnAddSwipe"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Add Swipe Target"
+        android:src="@android:drawable/ic_menu_directions"
+        android:tint="#F59E0B" />
+
+    <ImageButton
+        android:id="@+id/btnLockUnlock"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Lock or Unlock Positions"
+        android:src="@android:drawable/ic_lock_lock"
+        android:tint="#A855F7" />
+
+    <ImageButton
+        android:id="@+id/btnRemoveTarget"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Remove Target"
+        android:src="@android:drawable/ic_delete"
+        android:tint="#EF4444" />
+
+    <ImageButton
+        android:id="@+id/btnMinimize"
+        android:layout_width="44dp"
+        android:layout_height="44dp"
+        android:layout_margin="4dp"
+        android:background="?android:attr/selectableItemBackgroundBorderless"
+        android:contentDescription="Minimize Overlay"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:tint="#94A3B8" />
+
+</LinearLayout>

@@ -1,0 +1,6 @@
+{
+  "name": "Visual Auto Clicker",
+  "description": "A feature-packed visual auto clicker with gesture recording, macro scripts, overlay floating controls, accessibility support, and anti-detection.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
