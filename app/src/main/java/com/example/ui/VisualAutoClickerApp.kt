@@ -41,7 +41,8 @@ enum class AppNavDestination {
     SCRIPTS,
     SCRIPT_DETAIL,
     SETTINGS,
-    GUIDE
+    GUIDE,
+    MASTER_SETUP
 }
 
 @Composable
@@ -65,7 +66,7 @@ fun VisualAutoClickerApp(viewModel: MainViewModel) {
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         bottomBar = {
-            if (currentDestination != AppNavDestination.SCRIPT_DETAIL && currentDestination != AppNavDestination.GUIDE) {
+            if (currentDestination != AppNavDestination.SCRIPT_DETAIL && currentDestination != AppNavDestination.GUIDE && currentDestination != AppNavDestination.MASTER_SETUP) {
                 NavigationBar(
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface
@@ -159,6 +160,12 @@ fun VisualAutoClickerApp(viewModel: MainViewModel) {
                         onStartService = { script ->
                             startAutoClickerService(context, script)
                         },
+                        onStartMasterMode = {
+                            startMasterAutoClickerService(context)
+                        },
+                        onOpenMasterSetup = {
+                            currentDestination = AppNavDestination.MASTER_SETUP
+                        },
                         onStopService = {
                             stopAutoClickerService(context)
                         },
@@ -201,6 +208,11 @@ fun VisualAutoClickerApp(viewModel: MainViewModel) {
                     AppNavDestination.GUIDE -> GuideScreen(
                         onBack = { currentDestination = AppNavDestination.DASHBOARD }
                     )
+
+                    AppNavDestination.MASTER_SETUP -> MasterModeSetupScreen(
+                        repository = com.example.repository.MasterModeRepository(context),
+                        onBack = { currentDestination = AppNavDestination.DASHBOARD }
+                    )
                 }
             }
         }
@@ -210,6 +222,17 @@ fun VisualAutoClickerApp(viewModel: MainViewModel) {
 private fun startAutoClickerService(context: Context, script: ScriptModel) {
     val intent = Intent(context, AutoClickerService::class.java).apply {
         action = AutoClickerService.ACTION_START_OVERLAY
+    }
+    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+        context.startForegroundService(intent)
+    } else {
+        context.startService(intent)
+    }
+}
+
+private fun startMasterAutoClickerService(context: Context) {
+    val intent = Intent(context, AutoClickerService::class.java).apply {
+        action = AutoClickerService.ACTION_START_MASTER_OVERLAY
     }
     if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
         context.startForegroundService(intent)

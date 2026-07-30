@@ -46,6 +46,10 @@ class AutoClickerService : Service() {
                 startForegroundServiceWithNotification()
                 overlayManager?.showOverlay()
             }
+            ACTION_START_MASTER_OVERLAY -> {
+                startForegroundServiceWithNotification()
+                overlayManager?.showMasterOverlay()
+            }
             ACTION_STOP_OVERLAY -> {
                 overlayManager?.hideOverlay()
                 stopForeground(true)
@@ -125,6 +129,7 @@ class AutoClickerService : Service() {
         const val NOTIFICATION_ID = 1001
 
         const val ACTION_START_OVERLAY = "com.example.service.START_OVERLAY"
+        const val ACTION_START_MASTER_OVERLAY = "com.example.service.START_MASTER_OVERLAY"
         const val ACTION_STOP_OVERLAY = "com.example.service.STOP_OVERLAY"
     }
 }

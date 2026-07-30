@@ -128,6 +128,77 @@ class OverlayManager(
         }
     }
 
+    private var masterTargetViews = mutableListOf<MasterTargetOverlayView>()
+    private val masterRepository = com.example.repository.MasterModeRepository(context)
+    private var isMasterOverlayVisible = false
+
+    fun showMasterOverlay() {
+        if (!PermissionUtils.hasOverlayPermission(context)) return
+        if (!isMasterOverlayVisible) {
+            floatingBar?.show()
+            val settings = masterRepository.loadSettings()
+            com.example.automation.MasterAutomationEngine.isMasterModeActive = true
+
+            val specs = listOf(
+                MasterTargetSpec("notif", "Notif", 1, "#00E5FF", settings.notificationX, settings.notificationY),
+                MasterTargetSpec("scan", "Scan", 2, "#38BDF8", settings.scannerX, settings.scannerY),
+                MasterTargetSpec("audio", "Audio", 3, "#A855F7", settings.audioToTextX, settings.audioToTextY),
+                MasterTargetSpec("input", "Input", 4, "#F59E0B", settings.textInputX, settings.textInputY),
+                MasterTargetSpec("send", "Send", 5, "#10B981", settings.sendX, settings.sendY),
+                MasterTargetSpec("back", "Back", 6, "#EF4444", settings.backX, settings.backY)
+            )
+
+            masterTargetViews.forEach {
+                try { windowManager.removeView(it) } catch (e: Exception) {}
+            }
+            masterTargetViews.clear()
+
+            specs.forEach { spec ->
+                val view = MasterTargetOverlayView(
+                    context = context,
+                    windowManager = windowManager,
+                    spec = spec,
+                    onPositionSaved = { updatedSpec ->
+                        val cur = masterRepository.loadSettings()
+                        val newSettings = when (updatedSpec.id) {
+                            "notif" -> cur.copy(notificationX = updatedSpec.xPx, notificationY = updatedSpec.yPx)
+                            "scan" -> cur.copy(scannerX = updatedSpec.xPx, scannerY = updatedSpec.yPx)
+                            "audio" -> cur.copy(audioToTextX = updatedSpec.xPx, audioToTextY = updatedSpec.yPx)
+                            "input" -> cur.copy(textInputX = updatedSpec.xPx, textInputY = updatedSpec.yPx)
+                            "send" -> cur.copy(sendX = updatedSpec.xPx, sendY = updatedSpec.yPx)
+                            "back" -> cur.copy(backX = updatedSpec.xPx, backY = updatedSpec.yPx)
+                            else -> cur
+                        }
+                        masterRepository.saveSettings(newSettings)
+                    },
+                    onTargetTapped = { tappedSpec ->
+                        val engine = com.example.automation.MasterAutomationEngine.getInstance(context)
+                        engine.processImoPipeline("com.imo.android.imoim", "Manual Test", "Hello from Master Target ${tappedSpec.label}")
+                    }
+                )
+                masterTargetViews.add(view)
+                try {
+                    windowManager.addView(view, view.windowParams)
+                } catch (e: Exception) {
+                    // Ignore
+                }
+            }
+            isMasterOverlayVisible = true
+            isOverlayVisible = true
+        }
+    }
+
+    fun hideMasterOverlay() {
+        if (isMasterOverlayVisible) {
+            com.example.automation.MasterAutomationEngine.isMasterModeActive = false
+            masterTargetViews.forEach {
+                try { windowManager.removeView(it) } catch (e: Exception) {}
+            }
+            masterTargetViews.clear()
+            isMasterOverlayVisible = false
+        }
+    }
+
     fun showOverlay() {
         if (!PermissionUtils.hasOverlayPermission(context)) return
         if (!isOverlayVisible) {
@@ -151,6 +222,7 @@ class OverlayManager(
 
     fun hideOverlay() {
         if (isOverlayVisible) {
+            hideMasterOverlay()
             floatingVideoOverlay.dismiss()
             scriptRunner.stopScript()
             floatingBar?.hide()

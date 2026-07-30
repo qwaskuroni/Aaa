@@ -23,6 +23,8 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.SmartButton
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material.icons.outlined.HelpOutline
@@ -58,6 +60,8 @@ fun DashboardScreen(
     onRequestOverlayPermission: () -> Unit,
     onOpenAccessibilitySettings: () -> Unit,
     onStartService: (ScriptModel) -> Unit,
+    onStartMasterMode: () -> Unit,
+    onOpenMasterSetup: () -> Unit,
     onStopService: () -> Unit,
     onOpenGuide: () -> Unit
 ) {
@@ -310,6 +314,89 @@ fun DashboardScreen(
                     Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(text = "Start Multi Target Overlay", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Master Mode Launcher (AI IMO Automation)
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFF1E293B))
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(Color(0xFF8B5CF6)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.SmartButton,
+                            contentDescription = "Master Mode",
+                            tint = Color.White
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Master Mode",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "AI Agent",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFC084FC),
+                                modifier = Modifier
+                                    .background(Color(0xFF3B0764), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            )
+                        }
+                        Text(
+                            text = "Event-driven AI agent that handles IMO chat notifications, voice-to-text, and replies.",
+                            fontSize = 12.sp,
+                            color = Color(0xFF94A3B8)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(
+                        onClick = onStartMasterMode,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("btn_start_master_mode"),
+                        enabled = hasOverlayPermission && isAccessibilityEnabled,
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6), contentColor = Color.White)
+                    ) {
+                        Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Start Master Overlay", fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    }
+
+                    OutlinedButton(
+                        onClick = onOpenMasterSetup,
+                        modifier = Modifier.testTag("btn_open_master_setup"),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFFC084FC))
+                    ) {
+                        Icon(imageVector = Icons.Default.Settings, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "Setup & AI", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
