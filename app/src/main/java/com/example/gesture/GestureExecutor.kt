@@ -4,6 +4,9 @@ import android.graphics.Path
 import com.example.accessibility.AutoClickerAccessibilityService
 import com.example.model.ClickTarget
 import com.example.model.TargetType
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.random.Random
 
 object GestureExecutor {
@@ -14,8 +17,20 @@ object GestureExecutor {
         target: ClickTarget,
         randomOffsetPx: Int = 0
     ): Boolean {
+        // Trigger video overlay asynchronously if mediaUri is present or type is VIDEO_PLAY
+        if (target.type == TargetType.VIDEO_PLAY || target.mediaUri.isNotEmpty()) {
+            CoroutineScope(Dispatchers.Main).launch {
+                try {
+                    videoPlayerHandler?.invoke(target)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
         if (target.type == TargetType.VIDEO_PLAY) {
-            videoPlayerHandler?.invoke(target) ?: kotlinx.coroutines.delay(1000L)
+            val waitTime = target.durationMs.coerceAtLeast(1000L)
+            kotlinx.coroutines.delay(waitTime)
             return true
         }
 
@@ -61,7 +76,6 @@ object GestureExecutor {
                 service.pasteClipboard()
             }
             TargetType.VIDEO_PLAY -> {
-                videoPlayerHandler?.invoke(target) ?: kotlinx.coroutines.delay(1000L)
                 true
             }
             TargetType.SYSTEM_BACK -> {

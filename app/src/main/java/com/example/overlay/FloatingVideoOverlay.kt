@@ -34,11 +34,6 @@ class FloatingVideoOverlay(
         val trimmedUri = videoUriStr.trim()
 
         mainHandler.post {
-            // If a video is ALREADY actively playing, do NOT interrupt or restart it!
-            if (overlayView != null && isPlayingVideo) {
-                return@post
-            }
-
             dismiss()
             this.onCompleteCallback = onComplete
 
@@ -177,11 +172,6 @@ class FloatingVideoOverlay(
                 scheduleAutoClose(5000L)
             } else {
                 try {
-                    val mediaController = android.widget.MediaController(context).apply {
-                        setAnchorView(vView)
-                    }
-                    vView.setMediaController(mediaController)
-
                     if (trimmedUri.startsWith("/")) {
                         vView.setVideoPath(trimmedUri)
                     } else {
