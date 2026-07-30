@@ -173,16 +173,21 @@ class FloatingVideoOverlay(
             }
 
             if (trimmedUri.isEmpty()) {
-                statusText.text = "🎬 Step #$stepOrder Video Action\nNo gallery video selected.\nClosing window in 3s..."
-                scheduleAutoClose(3000L)
+                statusText.text = "🎬 Step #$stepOrder Video Action\nNo gallery video selected.\nPlaying preview card for 5s..."
+                scheduleAutoClose(5000L)
             } else {
                 try {
-                    val uri = Uri.parse(trimmedUri)
                     val mediaController = android.widget.MediaController(context).apply {
                         setAnchorView(vView)
                     }
                     vView.setMediaController(mediaController)
-                    vView.setVideoURI(uri)
+
+                    if (trimmedUri.startsWith("/")) {
+                        vView.setVideoPath(trimmedUri)
+                    } else {
+                        vView.setVideoURI(Uri.parse(trimmedUri))
+                    }
+
                     vView.setOnPreparedListener { mp ->
                         isPlayingVideo = true
                         currentVideoUriStr = trimmedUri
@@ -199,16 +204,16 @@ class FloatingVideoOverlay(
                         isPlayingVideo = false
                         currentVideoUriStr = ""
                         statusText.visibility = View.VISIBLE
-                        statusText.text = "Unable to play gallery video:\n$trimmedUri\nClosing window in 3s..."
-                        scheduleAutoClose(3000L)
+                        statusText.text = "Unable to play gallery video:\n$trimmedUri\nClosing window in 4s..."
+                        scheduleAutoClose(4000L)
                         true
                     }
                 } catch (e: Exception) {
                     isPlayingVideo = false
                     currentVideoUriStr = ""
                     statusText.visibility = View.VISIBLE
-                    statusText.text = "Error loading video:\n${e.localizedMessage}\nClosing window..."
-                    scheduleAutoClose(3000L)
+                    statusText.text = "Error loading video:\n${e.localizedMessage}\nClosing window in 4s..."
+                    scheduleAutoClose(4000L)
                 }
             }
         }
