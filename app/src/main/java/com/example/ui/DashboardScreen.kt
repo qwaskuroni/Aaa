@@ -296,8 +296,7 @@ fun DashboardScreen(
                         val multiScript = ScriptModel(
                             name = "Multi Target Mode",
                             targets = listOf(
-                                ClickTarget(order = 1, type = TargetType.SINGLE_TAP, delayMs = 500L),
-                                ClickTarget(order = 2, type = TargetType.SINGLE_TAP, delayMs = 500L)
+                                ClickTarget(order = 1, type = TargetType.SINGLE_TAP, delayMs = 500L)
                             )
                         )
                         onStartService(multiScript)

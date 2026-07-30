@@ -16,6 +16,7 @@ import com.example.model.ScriptModel
 import com.example.model.TargetType
 import com.example.utils.DisplayUtils
 import com.example.utils.FeedbackUtils
+import com.example.permission.PermissionUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -123,6 +124,7 @@ class OverlayManager(
     }
 
     fun showOverlay() {
+        if (!PermissionUtils.hasOverlayPermission(context)) return
         if (!isOverlayVisible) {
             floatingBar?.show()
             targetViews.forEach {
@@ -283,12 +285,15 @@ class OverlayManager(
         val currentState = scriptRunner.executionState.value
         if (currentState is ExecutionState.Running) {
             scriptRunner.pauseScript()
+            targetViews.forEach { it.setTouchThrough(false) }
             floatingBar?.setPlayState(isPlaying = false, isPaused = true)
         } else if (currentState is ExecutionState.Paused) {
+            targetViews.forEach { it.setTouchThrough(true) }
             scriptRunner.resumeScript()
             floatingBar?.setPlayState(isPlaying = true, isPaused = false)
         } else {
             if (_currentScript.value.targets.isNotEmpty()) {
+                targetViews.forEach { it.setTouchThrough(true) }
                 scriptRunner.startScript(_currentScript.value, globalSettings)
                 floatingBar?.setPlayState(isPlaying = true, isPaused = false)
             }
@@ -298,10 +303,14 @@ class OverlayManager(
     private fun stopExecution() {
         dismissCurrentDialog()
         scriptRunner.stopScript()
+        targetViews.forEach { it.setTouchThrough(false) }
         floatingBar?.setPlayState(isPlaying = false, isPaused = false)
     }
 
     private fun showEditTargetDialog(target: ClickTarget) {
+        if (scriptRunner.executionState.value !is ExecutionState.Idle) {
+            return
+        }
         dismissCurrentDialog()
 
         val dialogBinding = OverlayTargetEditDialogBinding.inflate(LayoutInflater.from(context))

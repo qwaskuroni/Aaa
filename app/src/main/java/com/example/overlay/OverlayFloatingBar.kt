@@ -57,14 +57,24 @@ class OverlayFloatingBar(
         setupDragHandle()
     }
 
+    private var lastClickTime = 0L
+
+    private fun safeClick(action: () -> Unit) {
+        val now = System.currentTimeMillis()
+        if (now - lastClickTime >= 350L) {
+            lastClickTime = now
+            action()
+        }
+    }
+
     private fun setupListeners() {
-        binding.btnPlayPause.setOnClickListener { listener.onPlayPauseClicked() }
-        binding.btnStop.setOnClickListener { listener.onStopClicked() }
-        binding.btnAddTarget.setOnClickListener { listener.onAddTargetClicked() }
-        binding.btnAddSwipe.setOnClickListener { listener.onAddSwipeClicked() }
-        binding.btnLockUnlock.setOnClickListener { listener.onLockToggleClicked() }
-        binding.btnRemoveTarget.setOnClickListener { listener.onRemoveTargetClicked() }
-        binding.btnMinimize.setOnClickListener { listener.onCloseClicked() }
+        binding.btnPlayPause.setOnClickListener { safeClick { listener.onPlayPauseClicked() } }
+        binding.btnStop.setOnClickListener { safeClick { listener.onStopClicked() } }
+        binding.btnAddTarget.setOnClickListener { safeClick { listener.onAddTargetClicked() } }
+        binding.btnAddSwipe.setOnClickListener { safeClick { listener.onAddSwipeClicked() } }
+        binding.btnLockUnlock.setOnClickListener { safeClick { listener.onLockToggleClicked() } }
+        binding.btnRemoveTarget.setOnClickListener { safeClick { listener.onRemoveTargetClicked() } }
+        binding.btnMinimize.setOnClickListener { safeClick { listener.onCloseClicked() } }
     }
 
     private fun setupDragHandle() {

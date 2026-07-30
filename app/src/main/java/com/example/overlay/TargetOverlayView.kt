@@ -71,6 +71,9 @@ class TargetOverlayView(
 
     private var activeStepOrder: Int = -1
 
+    var isTouchThrough: Boolean = false
+        private set
+
     fun setActiveStep(stepOrder: Int) {
         if (this.activeStepOrder != stepOrder) {
             this.activeStepOrder = stepOrder
@@ -79,6 +82,7 @@ class TargetOverlayView(
     }
 
     fun setTouchThrough(enableTouchThrough: Boolean) {
+        this.isTouchThrough = enableTouchThrough
         if (enableTouchThrough) {
             windowParams.flags = windowParams.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
         } else {
@@ -156,6 +160,10 @@ class TargetOverlayView(
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
+        if (isTouchThrough || (windowParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE) != 0) {
+            return false
+        }
+
         if (event.pointerCount == 2) {
             // Two-finger pinch to resize
             when (event.actionMasked) {
