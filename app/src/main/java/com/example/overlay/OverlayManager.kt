@@ -46,6 +46,16 @@ class OverlayManager(
     private var floatingBar: OverlayFloatingBar? = null
     private var isOverlayVisible = false
     private var isOverlayLocked = false
+    private var currentEditDialog: Dialog? = null
+
+    private fun dismissCurrentDialog() {
+        try {
+            currentEditDialog?.dismiss()
+        } catch (e: Exception) {
+            // Ignore
+        }
+        currentEditDialog = null
+    }
 
     init {
         scope.launch {
@@ -269,6 +279,7 @@ class OverlayManager(
     }
 
     private fun toggleExecution() {
+        dismissCurrentDialog()
         val currentState = scriptRunner.executionState.value
         if (currentState is ExecutionState.Running) {
             scriptRunner.pauseScript()
@@ -285,11 +296,14 @@ class OverlayManager(
     }
 
     private fun stopExecution() {
+        dismissCurrentDialog()
         scriptRunner.stopScript()
         floatingBar?.setPlayState(isPlaying = false, isPaused = false)
     }
 
     private fun showEditTargetDialog(target: ClickTarget) {
+        dismissCurrentDialog()
+
         val dialogBinding = OverlayTargetEditDialogBinding.inflate(LayoutInflater.from(context))
         dialogBinding.tvTitle.text = "Action Button #${target.order}"
         dialogBinding.etDelayMs.setText(target.delayMs.toString())
@@ -348,24 +362,23 @@ class OverlayManager(
             dialogBinding.etSizePx.setText(currentDialogSize.toInt().toString())
         }
 
-        val dialogParams = WindowManager.LayoutParams().apply {
-            width = WindowManager.LayoutParams.WRAP_CONTENT
-            height = WindowManager.LayoutParams.WRAP_CONTENT
-            type = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-            } else {
-                @Suppress("DEPRECATION")
-                WindowManager.LayoutParams.TYPE_PHONE
-            }
-            flags = WindowManager.LayoutParams.FLAG_DIM_BEHIND
-            dimAmount = 0.5f
-        }
-
         val dialog = Dialog(context).apply {
             requestWindowFeature(Window.FEATURE_NO_TITLE)
             setContentView(dialogBinding.root)
             window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            window?.attributes = dialogParams
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+            } else {
+                @Suppress("DEPRECATION")
+                window?.setType(WindowManager.LayoutParams.TYPE_PHONE)
+            }
+        }
+
+        currentEditDialog = dialog
+        dialog.setOnDismissListener {
+            if (currentEditDialog == dialog) {
+                currentEditDialog = null
+            }
         }
 
         dialogBinding.btnDuplicate.setOnClickListener {
