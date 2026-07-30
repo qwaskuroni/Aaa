@@ -47,6 +47,10 @@ class MasterAutomationEngine private constructor(private val context: Context) {
     @Volatile
     private var isProcessing = false
 
+    private var lastProcessedTitle = ""
+    private var lastProcessedText = ""
+    private var lastProcessedTime = 0L
+
     fun onImoNotificationReceived(
         packageName: String,
         title: String,
@@ -59,10 +63,31 @@ class MasterAutomationEngine private constructor(private val context: Context) {
             return
         }
 
+        // Filter out empty or system status notifications
+        if (title.isBlank() && text.isBlank()) return
+        val lowerText = text.lowercase()
+        if (lowerText.contains("running in background") ||
+            lowerText.contains("back-ground") ||
+            lowerText.contains("tap for settings")
+        ) {
+            return
+        }
+
+        // Debounce duplicate notifications received within 4 seconds
+        val now = System.currentTimeMillis()
+        if (title == lastProcessedTitle && text == lastProcessedText && (now - lastProcessedTime) < 4000L) {
+            Log.d(TAG, "Duplicate notification ignored: $title - $text")
+            return
+        }
+
         if (isProcessing) {
             Log.d(TAG, "Engine busy processing another notification")
             return
         }
+
+        lastProcessedTitle = title
+        lastProcessedText = text
+        lastProcessedTime = now
 
         val pendingIntent = sbn.notification.contentIntent
         processImoPipeline(packageName, title, text, pendingIntent)
@@ -86,7 +111,7 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                 )
 
                 // 1. EVENT: Trigger Notification Target to open chat window
-                logAndSetState(MasterEngineState.OpeningChat, "Triggering Notification Target...")
+                logAndSetState(MasterEngineState.OpeningChat, "Opening chat screen...")
                 val accessibility = AutoClickerAccessibilityService.instance
 
                 if (pendingIntent != null) {
@@ -100,7 +125,7 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                     accessibility?.performTap(settings.notificationX.toFloat(), settings.notificationY.toFloat())
                 }
 
-                delay(1200L) // UI render delay
+                delay(1200L) // Wait for chat window to render
 
                 // 2. EVENT: Scan Active Chat Node via Accessibility or Scanner Target
                 logAndSetState(MasterEngineState.ScanningChat, "Scanning active chat screen...")
@@ -108,12 +133,16 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                 delay(300L)
 
                 val chatContent = scanChatWindow(accessibility)
-                val detectedText = chatContent.text
+                val scannedText = chatContent.text
                 val isVoice = chatContent.isVoiceMessage
-                val isNonText = chatContent.isNonTextContent
 
-                if (isNonText) {
-                    logAndSetState(MasterEngineState.NavigatingBack, "Ignored non-text message (Call/Photo/Sticker/Emoji). Navigating Back.")
+                // Message for AI: Prefer scanned text from screen, fallback to notification text
+                var messageForAi = scannedText.ifBlank { text }.trim()
+
+                // Check if the message is non-text (Photo, Sticker, Call)
+                val isNonText = isNonTextMessage(text) || (scannedText.isNotBlank() && isNonTextMessage(scannedText))
+                if (isNonText && !isVoice) {
+                    logAndSetState(MasterEngineState.NavigatingBack, "Non-text message detected (Call/Photo/Sticker). Navigating Back.")
                     accessibility?.performTap(settings.backX.toFloat(), settings.backY.toFloat())
                     accessibility?.performBack()
                     delay(500L)
@@ -121,10 +150,8 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                     return@launch
                 }
 
-                var messageForAi = detectedText.ifBlank { text }
-
                 // Check for Voice / Audio message
-                if (isVoice || messageForAi.lowercase().contains("voice message") || messageForAi.lowercase().contains("audio")) {
+                if (isVoice || messageForAi.lowercase().contains("voice message") || messageForAi.contains("ভয়েস")) {
                     logAndSetState(MasterEngineState.ConvertingAudioToText, "Voice message detected. Triggering Audio-to-Text ('A' icon)...")
                     accessibility?.performTap(settings.audioToTextX.toFloat(), settings.audioToTextY.toFloat())
                     delay(1500L) // Wait for text conversion
@@ -137,7 +164,7 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                 }
 
                 if (messageForAi.isBlank()) {
-                    logAndSetState(MasterEngineState.NavigatingBack, "No text content found. Navigating back.")
+                    logAndSetState(MasterEngineState.NavigatingBack, "No text content found to reply. Navigating back.")
                     accessibility?.performTap(settings.backX.toFloat(), settings.backY.toFloat())
                     accessibility?.performBack()
                     delay(500L)
@@ -145,48 +172,54 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                     return@launch
                 }
 
-                // 3. Call OpenAI API
-                logAndSetState(MasterEngineState.CallingAi(messageForAi), "Querying AI model with: '$messageForAi'")
-                val aiResult = openAiService.generateReply(
-                    apiKey = settings.openAiApiKey,
-                    systemPrompt = settings.systemPrompt,
-                    userMessage = messageForAi
-                )
+                // 3. Call AI API or Fallback Auto-Reply
+                logAndSetState(MasterEngineState.CallingAi(messageForAi), "Querying AI for: '$messageForAi'")
 
-                if (aiResult.isSuccess) {
-                    val aiReply = aiResult.getOrDefault("Hello! How can I help you?")
+                val aiReply: String = if (settings.openAiApiKey.isNotBlank()) {
+                    val aiResult = openAiService.generateReply(
+                        apiKey = settings.openAiApiKey,
+                        systemPrompt = settings.systemPrompt,
+                        userMessage = messageForAi
+                    )
+                    if (aiResult.isSuccess) {
+                        aiResult.getOrDefault("ধন্যবাদ! আমি মেসেজ পেয়েছি।")
+                    } else {
+                        val err = aiResult.exceptionOrNull()?.message ?: "AI request failed"
+                        Log.w(TAG, "AI Call failed ($err), using default response")
+                        "ধন্যবাদ, আমি এই মুহূর্তে ব্যস্ত আছি। পরে কথা বলছি!"
+                    }
+                } else {
+                    Log.i(TAG, "OpenAI API key missing, using smart default reply")
+                    "ধন্যবাদ, আমি এই মুহূর্তে ব্যস্ত আছি। পরে কথা বলছি!"
+                }
 
-                    // 4. Inject AI Reply into Text Input Target
-                    logAndSetState(MasterEngineState.InjectingReply(aiReply), "Injecting AI reply: '$aiReply'")
+                // 4. Inject AI Reply into Text Input Target
+                logAndSetState(MasterEngineState.InjectingReply(aiReply), "Injecting reply: '$aiReply'")
+                accessibility?.performTap(settings.textInputX.toFloat(), settings.textInputY.toFloat())
+                delay(400L)
+
+                val textInjected = accessibility?.inputText(aiReply) ?: false
+                if (!textInjected) {
+                    Log.w(TAG, "Direct input failed, retrying tap & input")
                     accessibility?.performTap(settings.textInputX.toFloat(), settings.textInputY.toFloat())
                     delay(300L)
-
-                    val textInjected = accessibility?.inputText(aiReply) ?: false
-                    if (!textInjected) {
-                        Log.w(TAG, "Direct input failed, fallback tap text input target")
-                    }
-                    delay(400L)
-
-                    // 5. Send Target
-                    logAndSetState(MasterEngineState.SendingMessage, "Triggering Send Target...")
-                    accessibility?.performTap(settings.sendX.toFloat(), settings.sendY.toFloat())
-                    feedbackUtils.playClickSound()
-                    delay(600L)
-
-                    // 6. Back Navigation Target
-                    logAndSetState(MasterEngineState.NavigatingBack, "Triggering Back Navigation Target...")
-                    accessibility?.performTap(settings.backX.toFloat(), settings.backY.toFloat())
-                    accessibility?.performBack()
-                    delay(500L)
-
-                    logAndSetState(MasterEngineState.Idle, "Master Mode pipeline completed successfully.")
-                } else {
-                    val err = aiResult.exceptionOrNull()?.message ?: "AI request failed"
-                    logAndSetState(MasterEngineState.Error(err), "AI Error: $err")
-                    delay(1000L)
-                    accessibility?.performTap(settings.backX.toFloat(), settings.backY.toFloat())
-                    accessibility?.performBack()
+                    accessibility?.inputText(aiReply)
                 }
+                delay(500L)
+
+                // 5. Send Target
+                logAndSetState(MasterEngineState.SendingMessage, "Triggering Send Target...")
+                accessibility?.performTap(settings.sendX.toFloat(), settings.sendY.toFloat())
+                feedbackUtils.playClickSound()
+                delay(800L) // Wait for message to be sent
+
+                // 6. Back Navigation Target
+                logAndSetState(MasterEngineState.NavigatingBack, "Triggering Back Navigation...")
+                accessibility?.performTap(settings.backX.toFloat(), settings.backY.toFloat())
+                accessibility?.performBack()
+                delay(500L)
+
+                logAndSetState(MasterEngineState.Idle, "Master Mode pipeline completed successfully.")
             } catch (e: Exception) {
                 Log.e(TAG, "Error during Master Automation Pipeline", e)
                 logAndSetState(MasterEngineState.Error(e.localizedMessage ?: "Pipeline error"), "Pipeline error: ${e.message}")
@@ -198,16 +231,32 @@ class MasterAutomationEngine private constructor(private val context: Context) {
 
     private data class ScannedChatResult(
         val text: String = "",
-        val isVoiceMessage: Boolean = false,
-        val isNonTextContent: Boolean = false
+        val isVoiceMessage: Boolean = false
     )
+
+    private fun isNonTextMessage(str: String): Boolean {
+        if (str.isBlank()) return false
+        val lower = str.lowercase().trim()
+        val exactNonTextKeywords = listOf(
+            "sent a photo", "photo", "sticker", "sent a sticker",
+            "missed call", "missed video call", "missed audio call",
+            "sent a video", "gif"
+        )
+        return exactNonTextKeywords.any { lower == it || lower.startsWith(it) }
+    }
 
     private fun scanChatWindow(service: AutoClickerAccessibilityService?): ScannedChatResult {
         val root = service?.rootInActiveWindow ?: return ScannedChatResult()
 
         val textNodes = mutableListOf<String>()
         var isVoice = false
-        var isNonText = false
+
+        // Common toolbar/header elements to ignore when reading message content
+        val headerIgnoreList = listOf(
+            "video call", "voice call", "call", "search", "back", "imo",
+            "more options", "online", "typing...", "last seen", "details",
+            "group info", "tap for settings"
+        )
 
         fun traverse(node: AccessibilityNodeInfo?) {
             if (node == null) return
@@ -218,18 +267,17 @@ class MasterAutomationEngine private constructor(private val context: Context) {
 
             if (combined.isNotBlank()) {
                 val lower = combined.lowercase()
-                if (lower.contains("missed call") ||
-                    lower.contains("photo") ||
-                    lower.contains("sticker") ||
-                    lower.contains("video call") ||
-                    lower.contains("incoming call")
-                ) {
-                    isNonText = true
-                }
-                if (lower.contains("voice message") || lower.contains("audio") || lower == "a") {
+
+                // Check for voice message indicators
+                if (lower.contains("voice message") || lower.contains("audio") || lower.contains("ভয়েস") || lower == "a") {
                     isVoice = true
                 }
-                textNodes.add(combined)
+
+                // Filter out standard header buttons so they don't spoil chat message content
+                val isHeaderButton = headerIgnoreList.any { lower == it }
+                if (!isHeaderButton) {
+                    textNodes.add(combined)
+                }
             }
 
             for (i in 0 until node.childCount) {
@@ -242,8 +290,7 @@ class MasterAutomationEngine private constructor(private val context: Context) {
         val joinedText = textNodes.takeLast(3).joinToString(" ")
         return ScannedChatResult(
             text = joinedText,
-            isVoiceMessage = isVoice,
-            isNonTextContent = isNonText
+            isVoiceMessage = isVoice
         )
     }
 
