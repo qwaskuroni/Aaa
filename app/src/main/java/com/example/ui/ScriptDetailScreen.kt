@@ -1,5 +1,7 @@
 package com.example.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -460,36 +462,55 @@ fun TargetDetailCard(
             }
 
             if (target.type == TargetType.VIDEO_PLAY) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val launcher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.GetContent()
+                ) { uri: android.net.Uri? ->
+                    if (uri != null) {
+                        try {
+                            context.contentResolver.takePersistableUriPermission(
+                                uri,
+                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        } catch (e: Exception) {
+                            // ignore if not persistable
+                        }
+                        onUpdate(target.copy(mediaUri = uri.toString()))
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Video File Path or URI:",
+                    text = "Select Video from Gallery:",
                     fontSize = 12.sp,
                     color = Color(0xFFFF2D55),
                     fontWeight = FontWeight.Medium
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                OutlinedTextField(
-                    value = target.mediaUri,
-                    onValueChange = { newUri ->
-                        onUpdate(target.copy(mediaUri = newUri))
-                    },
+                Button(
+                    onClick = { launcher.launch("video/*") },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF2D55)),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag("input_video_uri_${target.order}"),
-                    placeholder = { Text("Enter video file path or content URI...", color = Color(0xFF64748B)) },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Color(0xFFFF2D55),
-                        unfocusedBorderColor = Color(0xFF334155),
-                        focusedTextColor = Color.White,
-                        unfocusedTextColor = Color.White
+                        .testTag("btn_select_gallery_video_${target.order}")
+                ) {
+                    Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null, tint = Color.White)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = "🎥 Choose Video from Gallery", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+                if (target.mediaUri.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Selected URI: ${target.mediaUri}",
+                        fontSize = 10.sp,
+                        color = Color(0xFF38BDF8)
                     )
-                )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "✓ Saved automatically. Plays in small overlay window when action runs.",
+                    text = "✓ Selected video will play in a small window when this step executes.",
                     fontSize = 10.sp,
-                    color = Color(0xFF10B981),
-                    modifier = Modifier.padding(top = 2.dp)
+                    color = Color(0xFF10B981)
                 )
             }
 

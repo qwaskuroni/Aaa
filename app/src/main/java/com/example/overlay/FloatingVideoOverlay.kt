@@ -164,21 +164,26 @@ class FloatingVideoOverlay(
 
             val uriStr = videoUriStr.trim()
             if (uriStr.isEmpty()) {
-                statusText.text = "No video selected for Step #$stepOrder\nClosing window in 2s..."
+                statusText.text = "🎬 Step #$stepOrder Video Action\nNo gallery video selected.\nClosing in 2s..."
                 scheduleAutoClose(2000L)
             } else {
                 try {
                     val uri = Uri.parse(uriStr)
+                    val mediaController = android.widget.MediaController(context).apply {
+                        setAnchorView(vView)
+                    }
+                    vView.setMediaController(mediaController)
                     vView.setVideoURI(uri)
                     vView.setOnPreparedListener { mp ->
                         statusText.visibility = View.GONE
+                        mp.isLooping = false
                         mp.start()
                     }
                     vView.setOnCompletionListener {
                         dismissAndComplete()
                     }
                     vView.setOnErrorListener { _, _, _ ->
-                        statusText.text = "Unable to play video from path:\n$uriStr\nClosing window..."
+                        statusText.text = "Unable to play video:\n$uriStr\nClosing window in 2s..."
                         scheduleAutoClose(2000L)
                         true
                     }

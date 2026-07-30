@@ -139,18 +139,14 @@ class OverlayManager(
         }
     }
 
-    private suspend fun showVideoOverlay(target: ClickTarget) {
-        kotlinx.coroutines.suspendCancellableCoroutine<Unit> { continuation ->
-            floatingVideoOverlay.playVideo(
-                videoUriStr = target.mediaUri.ifEmpty { target.textContent },
-                stepOrder = target.order,
-                onComplete = {
-                    if (continuation.isActive) {
-                        continuation.resume(Unit) {}
-                    }
-                }
-            )
-        }
+    private fun showVideoOverlay(target: ClickTarget) {
+        floatingVideoOverlay.playVideo(
+            videoUriStr = target.mediaUri.ifEmpty { target.textContent },
+            stepOrder = target.order,
+            onComplete = {
+                // Window dismisses itself automatically when video finishes
+            }
+        )
     }
 
     fun hideOverlay() {
@@ -396,6 +392,19 @@ class OverlayManager(
             }
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
+
+        dialogBinding.btnPickGalleryVideo.setOnClickListener {
+            com.example.ui.VideoPickerActivity.onVideoPickedListener = { targetOrder, uriStr ->
+                if (targetOrder == target.order) {
+                    dialogBinding.etVideoUri.setText(uriStr)
+                    val selType = actionTypes.getOrNull(dialogBinding.spinnerActionType.selectedItemPosition) ?: target.type
+                    val updated = target.copy(type = selType, mediaUri = uriStr)
+                    updateTargetInScript(updated)
+                    targetViews.find { it.clickTarget.order == target.order }?.updateTargetData(updated)
+                }
+            }
+            com.example.ui.VideoPickerActivity.launch(context, target.order)
+        }
 
         dialogBinding.btnDecreaseSize.setOnClickListener {
             currentDialogSize = (currentDialogSize - 10f).coerceAtLeast(48f)

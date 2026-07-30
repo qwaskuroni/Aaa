@@ -82,8 +82,20 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Video File Path / Content URI:"
+            android:text="Select Video from Gallery:"
             android:textColor="#FF2D55"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnPickGalleryVideo"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:backgroundTint="#FF2D55"
+            android:text="🎥 Select Video from Gallery"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -91,20 +103,20 @@
             android:id="@+id/etVideoUri"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="6dp"
             android:background="#0F172A"
-            android:hint="Type or paste video file path / content URI..."
+            android:hint="Selected Video URI or Path..."
             android:textColorHint="#64748B"
             android:inputType="textUri|textMultiLine"
             android:padding="8dp"
-            android:textColor="#FFFFFF"
-            android:textSize="12sp" />
+            android:textColor="#38BDF8"
+            android:textSize="11sp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:text="✓ Saved automatically. Plays in small overlay window."
+            android:text="✓ Selected video will play in small window when step reaches this target."
             android:textColor="#10B981"
             android:textSize="10sp" />
     </LinearLayout>
