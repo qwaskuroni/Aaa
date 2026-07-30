@@ -30,6 +30,7 @@ object ScriptJsonUtils {
             targetObj.put("sizePx", target.sizePx.toDouble())
             targetObj.put("isLocked", target.isLocked)
             targetObj.put("textContent", target.textContent)
+            targetObj.put("mediaUri", target.mediaUri)
             targetObj.put("repeatCount", target.repeatCount)
             targetsArray.put(targetObj)
         }
@@ -73,6 +74,7 @@ object ScriptJsonUtils {
                             sizePx = obj.optDouble("sizePx", 96.0).toFloat(),
                             isLocked = obj.optBoolean("isLocked", false),
                             textContent = obj.optString("textContent", ""),
+                            mediaUri = obj.optString("mediaUri", ""),
                             repeatCount = obj.optInt("repeatCount", 1)
                         )
                     )

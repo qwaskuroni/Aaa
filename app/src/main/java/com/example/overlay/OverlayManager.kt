@@ -45,6 +45,7 @@ class OverlayManager(
     val executionState: StateFlow<ExecutionState> = scriptRunner.executionState
 
     private var floatingBar: OverlayFloatingBar? = null
+    private val floatingVideoOverlay = FloatingVideoOverlay(context, windowManager)
     private var isOverlayVisible = false
     private var isOverlayLocked = false
     private var currentEditDialog: Dialog? = null
@@ -59,6 +60,10 @@ class OverlayManager(
     }
 
     init {
+        com.example.gesture.GestureExecutor.videoPlayerHandler = { target ->
+            showVideoOverlay(target)
+        }
+
         scope.launch {
             scriptRunner.executionState.collect { state ->
                 when (state) {
@@ -134,8 +139,23 @@ class OverlayManager(
         }
     }
 
+    private suspend fun showVideoOverlay(target: ClickTarget) {
+        kotlinx.coroutines.suspendCancellableCoroutine<Unit> { continuation ->
+            floatingVideoOverlay.playVideo(
+                videoUriStr = target.mediaUri.ifEmpty { target.textContent },
+                stepOrder = target.order,
+                onComplete = {
+                    if (continuation.isActive) {
+                        continuation.resume(Unit) {}
+                    }
+                }
+            )
+        }
+    }
+
     fun hideOverlay() {
         if (isOverlayVisible) {
+            floatingVideoOverlay.dismiss()
             scriptRunner.stopScript()
             floatingBar?.hide()
             targetViews.forEach {
@@ -302,6 +322,7 @@ class OverlayManager(
 
     private fun stopExecution() {
         dismissCurrentDialog()
+        floatingVideoOverlay.dismiss()
         scriptRunner.stopScript()
         targetViews.forEach { it.setTouchThrough(false) }
         floatingBar?.setPlayState(isPlaying = false, isPaused = false)
@@ -319,6 +340,7 @@ class OverlayManager(
         dialogBinding.etDurationMs.setText(target.durationMs.toString())
         dialogBinding.etSizePx.setText(target.sizePx.toInt().toString())
         dialogBinding.etTextInput.setText(target.textContent)
+        dialogBinding.etVideoUri.setText(target.mediaUri.ifEmpty { target.textContent })
 
         var currentDialogSize = target.sizePx
 
@@ -334,16 +356,17 @@ class OverlayManager(
         dialogBinding.spinnerActionType.adapter = adapter
         dialogBinding.spinnerActionType.setSelection(target.type.ordinal)
 
-        fun updateTextInputVisibility(type: TargetType) {
+        fun updateFieldsVisibility(type: TargetType) {
             dialogBinding.layoutTextInput.visibility = if (type == TargetType.TEXT_INPUT) android.view.View.VISIBLE else android.view.View.GONE
+            dialogBinding.layoutVideoInput.visibility = if (type == TargetType.VIDEO_PLAY) android.view.View.VISIBLE else android.view.View.GONE
         }
 
-        updateTextInputVisibility(target.type)
+        updateFieldsVisibility(target.type)
 
         dialogBinding.spinnerActionType.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
             override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
                 val selectedType = actionTypes[position]
-                updateTextInputVisibility(selectedType)
+                updateFieldsVisibility(selectedType)
             }
             override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
         }
@@ -355,6 +378,19 @@ class OverlayManager(
                 val currentText = s?.toString() ?: ""
                 val selType = actionTypes.getOrNull(dialogBinding.spinnerActionType.selectedItemPosition) ?: target.type
                 val quickUpdated = target.copy(type = selType, textContent = currentText)
+                updateTargetInScript(quickUpdated)
+                targetViews.find { it.clickTarget.order == target.order }?.updateTargetData(quickUpdated)
+            }
+            override fun afterTextChanged(s: android.text.Editable?) {}
+        })
+
+        // Auto-save video URI as typed
+        dialogBinding.etVideoUri.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val currentUri = s?.toString() ?: ""
+                val selType = actionTypes.getOrNull(dialogBinding.spinnerActionType.selectedItemPosition) ?: target.type
+                val quickUpdated = target.copy(type = selType, mediaUri = currentUri)
                 updateTargetInScript(quickUpdated)
                 targetViews.find { it.clickTarget.order == target.order }?.updateTargetData(quickUpdated)
             }
@@ -407,6 +443,7 @@ class OverlayManager(
             val durationMs = dialogBinding.etDurationMs.text.toString().toLongOrNull() ?: target.durationMs
             val sizePx = dialogBinding.etSizePx.text.toString().toFloatOrNull() ?: currentDialogSize
             val textContent = dialogBinding.etTextInput.text.toString()
+            val mediaUri = dialogBinding.etVideoUri.text.toString()
 
             val updatedTarget = target.copy(
                 type = selectedType,
@@ -414,6 +451,7 @@ class OverlayManager(
                 durationMs = durationMs,
                 sizePx = sizePx.coerceIn(48f, 240f),
                 textContent = textContent,
+                mediaUri = mediaUri,
                 label = "${selectedType.displayName} #${target.order}"
             )
 

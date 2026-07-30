@@ -8,10 +8,17 @@ import kotlin.random.Random
 
 object GestureExecutor {
 
+    var videoPlayerHandler: (suspend (ClickTarget) -> Unit)? = null
+
     suspend fun executeTarget(
         target: ClickTarget,
         randomOffsetPx: Int = 0
     ): Boolean {
+        if (target.type == TargetType.VIDEO_PLAY) {
+            videoPlayerHandler?.invoke(target) ?: kotlinx.coroutines.delay(1000L)
+            return true
+        }
+
         val service = AutoClickerAccessibilityService.instance ?: return false
 
         // Anti-detection random offset jitter calculation
@@ -52,6 +59,10 @@ object GestureExecutor {
                 service.performTap(startX, startY, 50L)
                 kotlinx.coroutines.delay(200L)
                 service.pasteClipboard()
+            }
+            TargetType.VIDEO_PLAY -> {
+                videoPlayerHandler?.invoke(target) ?: kotlinx.coroutines.delay(1000L)
+                true
             }
             TargetType.SYSTEM_BACK -> {
                 service.performBack()

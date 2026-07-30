@@ -71,6 +71,44 @@
             android:textSize="10sp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/layoutVideoInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Video File Path / Content URI:"
+            android:textColor="#FF2D55"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etVideoUri"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="#0F172A"
+            android:hint="Type or paste video file path / content URI..."
+            android:textColorHint="#64748B"
+            android:inputType="textUri|textMultiLine"
+            android:padding="8dp"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="✓ Saved automatically. Plays in small overlay window."
+            android:textColor="#10B981"
+            android:textSize="10sp" />
+    </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

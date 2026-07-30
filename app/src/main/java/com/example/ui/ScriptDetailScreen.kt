@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Swipe
 import androidx.compose.material.icons.filled.TouchApp
@@ -303,6 +304,25 @@ fun ScriptDetailScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(text = "+ Text", fontSize = 12.sp)
                     }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val newOrder = targets.size + 1
+                            targets = targets + ClickTarget(
+                                order = newOrder,
+                                type = TargetType.VIDEO_PLAY,
+                                delayMs = 500L,
+                                label = "Video Play #$newOrder"
+                            )
+                        },
+                        modifier = Modifier.testTag("btn_add_video_target")
+                    ) {
+                        Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "+ Video", fontSize = 12.sp)
+                    }
                 }
             }
 
@@ -433,6 +453,40 @@ fun TargetDetailCard(
                 )
                 Text(
                     text = "✓ Saved automatically",
+                    fontSize = 10.sp,
+                    color = Color(0xFF10B981),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+
+            if (target.type == TargetType.VIDEO_PLAY) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Video File Path or URI:",
+                    fontSize = 12.sp,
+                    color = Color(0xFFFF2D55),
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = target.mediaUri,
+                    onValueChange = { newUri ->
+                        onUpdate(target.copy(mediaUri = newUri))
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("input_video_uri_${target.order}"),
+                    placeholder = { Text("Enter video file path or content URI...", color = Color(0xFF64748B)) },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Color(0xFFFF2D55),
+                        unfocusedBorderColor = Color(0xFF334155),
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    )
+                )
+                Text(
+                    text = "✓ Saved automatically. Plays in small overlay window when action runs.",
                     fontSize = 10.sp,
                     color = Color(0xFF10B981),
                     modifier = Modifier.padding(top = 2.dp)

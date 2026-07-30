@@ -37,6 +37,7 @@ object DataMapper {
             sizePx = entity.sizePx,
             isLocked = entity.isLocked,
             textContent = entity.textContent,
+            mediaUri = entity.mediaUri,
             repeatCount = entity.repeatCount
         )
     }
@@ -69,6 +70,7 @@ object DataMapper {
             sizePx = model.sizePx,
             isLocked = model.isLocked,
             textContent = model.textContent,
+            mediaUri = model.mediaUri,
             repeatCount = model.repeatCount
         )
     }

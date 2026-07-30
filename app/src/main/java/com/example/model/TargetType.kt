@@ -8,6 +8,7 @@ enum class TargetType(val displayName: String) {
     WAIT("Wait"),
     TEXT_INPUT("Text Input"),
     CLIPBOARD_PASTE("Clipboard Paste"),
+    VIDEO_PLAY("Video Play"),
     SYSTEM_BACK("Back"),
     SYSTEM_HOME("Home"),
     SYSTEM_RECENTS("Recent Apps")

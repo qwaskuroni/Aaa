@@ -15,5 +15,6 @@ data class ClickTarget(
     val sizePx: Float = 96f,
     val isLocked: Boolean = false,
     val textContent: String = "",
+    val mediaUri: String = "",
     val repeatCount: Int = 1
 )
