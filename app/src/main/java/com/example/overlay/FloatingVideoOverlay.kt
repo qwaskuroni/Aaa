@@ -27,9 +27,18 @@ class FloatingVideoOverlay(
     private var onCompleteCallback: (() -> Unit)? = null
     private val mainHandler = Handler(Looper.getMainLooper())
     private var autoCloseRunnable: Runnable? = null
+    private var isPlayingVideo = false
+    private var currentVideoUriStr = ""
 
     fun playVideo(videoUriStr: String, stepOrder: Int, onComplete: () -> Unit) {
+        val trimmedUri = videoUriStr.trim()
+
         mainHandler.post {
+            // If a video is ALREADY actively playing, do NOT interrupt or restart it!
+            if (overlayView != null && isPlayingVideo) {
+                return@post
+            }
+
             dismiss()
             this.onCompleteCallback = onComplete
 
@@ -121,11 +130,12 @@ class FloatingVideoOverlay(
                 }
             }
 
-            // Video / Frame content
+            // Video / Frame content (uses weight 1f to fill remaining vertical height)
             val frameLayout = FrameLayout(context).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
+                    0,
+                    1f
                 )
             }
 
@@ -162,34 +172,43 @@ class FloatingVideoOverlay(
                 return@post
             }
 
-            val uriStr = videoUriStr.trim()
-            if (uriStr.isEmpty()) {
-                statusText.text = "🎬 Step #$stepOrder Video Action\nNo gallery video selected.\nClosing in 2s..."
-                scheduleAutoClose(2000L)
+            if (trimmedUri.isEmpty()) {
+                statusText.text = "🎬 Step #$stepOrder Video Action\nNo gallery video selected.\nClosing window in 3s..."
+                scheduleAutoClose(3000L)
             } else {
                 try {
-                    val uri = Uri.parse(uriStr)
+                    val uri = Uri.parse(trimmedUri)
                     val mediaController = android.widget.MediaController(context).apply {
                         setAnchorView(vView)
                     }
                     vView.setMediaController(mediaController)
                     vView.setVideoURI(uri)
                     vView.setOnPreparedListener { mp ->
+                        isPlayingVideo = true
+                        currentVideoUriStr = trimmedUri
                         statusText.visibility = View.GONE
                         mp.isLooping = false
                         mp.start()
                     }
                     vView.setOnCompletionListener {
+                        isPlayingVideo = false
+                        currentVideoUriStr = ""
                         dismissAndComplete()
                     }
                     vView.setOnErrorListener { _, _, _ ->
-                        statusText.text = "Unable to play video:\n$uriStr\nClosing window in 2s..."
-                        scheduleAutoClose(2000L)
+                        isPlayingVideo = false
+                        currentVideoUriStr = ""
+                        statusText.visibility = View.VISIBLE
+                        statusText.text = "Unable to play gallery video:\n$trimmedUri\nClosing window in 3s..."
+                        scheduleAutoClose(3000L)
                         true
                     }
                 } catch (e: Exception) {
+                    isPlayingVideo = false
+                    currentVideoUriStr = ""
+                    statusText.visibility = View.VISIBLE
                     statusText.text = "Error loading video:\n${e.localizedMessage}\nClosing window..."
-                    scheduleAutoClose(2000L)
+                    scheduleAutoClose(3000L)
                 }
             }
         }
@@ -218,6 +237,8 @@ class FloatingVideoOverlay(
     fun dismiss() {
         mainHandler.post {
             cancelAutoClose()
+            isPlayingVideo = false
+            currentVideoUriStr = ""
             try {
                 videoView?.stopPlayback()
             } catch (e: Exception) {
