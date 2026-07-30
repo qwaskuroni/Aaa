@@ -63,6 +63,34 @@ class TargetOverlayView(
         style = Paint.Style.FILL
     }
 
+    private val activeStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = Color.parseColor("#00FF66")
+        strokeWidth = 10f
+    }
+
+    private var activeStepOrder: Int = -1
+
+    fun setActiveStep(stepOrder: Int) {
+        if (this.activeStepOrder != stepOrder) {
+            this.activeStepOrder = stepOrder
+            invalidate()
+        }
+    }
+
+    fun setTouchThrough(enableTouchThrough: Boolean) {
+        if (enableTouchThrough) {
+            windowParams.flags = windowParams.flags or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        } else {
+            windowParams.flags = windowParams.flags and WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE.inv()
+        }
+        try {
+            windowManager.updateViewLayout(this, windowParams)
+        } catch (e: Exception) {
+            // Ignore if layout update fails
+        }
+    }
+
     private var initialX = 0
     private var initialY = 0
     private var initialTouchX = 0f
@@ -113,6 +141,10 @@ class TargetOverlayView(
 
         canvas.drawCircle(cx, cy, radius, circlePaint)
         canvas.drawCircle(cx, cy, radius, strokePaint)
+
+        if (clickTarget.order == activeStepOrder) {
+            canvas.drawCircle(cx, cy, radius - 2f, activeStrokePaint)
+        }
 
         textPaint.textSize = radius * 0.9f
         val textY = cy - ((textPaint.descent() + textPaint.ascent()) / 2)

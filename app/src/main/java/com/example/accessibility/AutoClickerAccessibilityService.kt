@@ -36,22 +36,35 @@ class AutoClickerAccessibilityService : AccessibilityService() {
         }
     }
 
-    suspend fun performTap(x: Float, y: Float, durationMs: Long = 50L): Boolean {
-        val path = Path().apply { moveTo(x, y) }
-        return performGesturePath(path, durationMs.coerceAtLeast(10L))
+    suspend fun performTap(x: Float, y: Float, durationMs: Long = 50L): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+        val path = Path().apply {
+            moveTo(x, y)
+            lineTo(x, y)
+        }
+        performGesturePath(path, durationMs.coerceAtLeast(10L))
     }
 
-    suspend fun performDoubleTap(x: Float, y: Float): Boolean {
-        val path1 = Path().apply { moveTo(x, y) }
+    suspend fun performDoubleTap(x: Float, y: Float): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+        val path1 = Path().apply {
+            moveTo(x, y)
+            lineTo(x, y)
+        }
         val res1 = performGesturePath(path1, 50L)
-        val path2 = Path().apply { moveTo(x, y) }
+        kotlinx.coroutines.delay(100L)
+        val path2 = Path().apply {
+            moveTo(x, y)
+            lineTo(x, y)
+        }
         val res2 = performGesturePath(path2, 50L)
-        return res1 && res2
+        res1 && res2
     }
 
-    suspend fun performLongPress(x: Float, y: Float, durationMs: Long = 1000L): Boolean {
-        val path = Path().apply { moveTo(x, y) }
-        return performGesturePath(path, durationMs.coerceAtLeast(500L))
+    suspend fun performLongPress(x: Float, y: Float, durationMs: Long = 1000L): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+        val path = Path().apply {
+            moveTo(x, y)
+            lineTo(x, y)
+        }
+        performGesturePath(path, durationMs.coerceAtLeast(500L))
     }
 
     suspend fun performSwipe(
@@ -60,16 +73,16 @@ class AutoClickerAccessibilityService : AccessibilityService() {
         endX: Float,
         endY: Float,
         durationMs: Long = 300L
-    ): Boolean {
+    ): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
         val path = Path().apply {
             moveTo(startX, startY)
             lineTo(endX, endY)
         }
-        return performGesturePath(path, durationMs.coerceAtLeast(100L))
+        performGesturePath(path, durationMs.coerceAtLeast(100L))
     }
 
-    suspend fun performGesturePath(path: Path, durationMs: Long): Boolean {
-        return suspendCancellableCoroutine { continuation ->
+    suspend fun performGesturePath(path: Path, durationMs: Long): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+        suspendCancellableCoroutine { continuation ->
             val stroke = GestureDescription.StrokeDescription(path, 0, durationMs.coerceAtLeast(1L))
             val gestureBuilder = GestureDescription.Builder()
             gestureBuilder.addStroke(stroke)
@@ -98,35 +111,43 @@ class AutoClickerAccessibilityService : AccessibilityService() {
         }
     }
 
-    fun inputText(text: String): Boolean {
-        val root = rootInActiveWindow
-        val focusedNode = findFocusedEditableNode(root)
+    suspend fun inputText(text: String): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+        if (text.isEmpty()) return@withContext true
 
-        if (focusedNode != null) {
-            val arguments = Bundle().apply {
-                putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        var success = false
+        for (attempt in 1..3) {
+            val root = rootInActiveWindow
+            val focusedNode = findFocusedEditableNode(root)
+
+            if (focusedNode != null) {
+                val arguments = Bundle().apply {
+                    putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+                }
+                success = focusedNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
+                if (success) break
             }
-            val result = focusedNode.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
-            if (result) return true
+            kotlinx.coroutines.delay(150L)
         }
 
-        // Fallback: Copy to clipboard and paste
-        try {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("AutoClickerInput", text)
-            clipboard.setPrimaryClip(clip)
-            return pasteClipboard()
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed text input fallback", e)
-            return false
+        if (!success) {
+            try {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("AutoClickerInput", text)
+                clipboard.setPrimaryClip(clip)
+                success = pasteClipboard()
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed text input fallback", e)
+            }
         }
+
+        success
     }
 
-    fun pasteClipboard(): Boolean {
+    suspend fun pasteClipboard(): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
         val root = rootInActiveWindow
         val focusedNode = findFocusedEditableNode(root)
 
-        return focusedNode?.performAction(AccessibilityNodeInfo.ACTION_PASTE) ?: false
+        focusedNode?.performAction(AccessibilityNodeInfo.ACTION_PASTE) ?: false
     }
 
     private fun findFocusedEditableNode(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
@@ -151,16 +172,16 @@ class AutoClickerAccessibilityService : AccessibilityService() {
         return null
     }
 
-    fun performBack(): Boolean {
-        return performGlobalAction(GLOBAL_ACTION_BACK)
+    suspend fun performBack(): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+        performGlobalAction(GLOBAL_ACTION_BACK)
     }
 
-    fun performHome(): Boolean {
-        return performGlobalAction(GLOBAL_ACTION_HOME)
+    suspend fun performHome(): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+        performGlobalAction(GLOBAL_ACTION_HOME)
     }
 
-    fun performRecents(): Boolean {
-        return performGlobalAction(GLOBAL_ACTION_RECENTS)
+    suspend fun performRecents(): Boolean = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+        performGlobalAction(GLOBAL_ACTION_RECENTS)
     }
 
     companion object {

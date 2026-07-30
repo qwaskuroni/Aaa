@@ -45,12 +45,12 @@ object GestureExecutor {
             }
             TargetType.TEXT_INPUT -> {
                 service.performTap(startX, startY, 50L)
-                kotlinx.coroutines.delay(100L)
+                kotlinx.coroutines.delay(200L)
                 service.inputText(target.textContent)
             }
             TargetType.CLIPBOARD_PASTE -> {
                 service.performTap(startX, startY, 50L)
-                kotlinx.coroutines.delay(100L)
+                kotlinx.coroutines.delay(200L)
                 service.pasteClipboard()
             }
             TargetType.SYSTEM_BACK -> {

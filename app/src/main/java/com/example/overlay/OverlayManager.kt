@@ -19,6 +19,7 @@ import com.example.utils.FeedbackUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 class OverlayManager(
     private val context: Context,
@@ -27,6 +28,7 @@ class OverlayManager(
 
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val scriptRunner = ScriptRunner(feedbackUtils)
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main)
 
     private val targetViews = mutableListOf<TargetOverlayView>()
     private val _currentScript = MutableStateFlow(
@@ -44,6 +46,36 @@ class OverlayManager(
     private var floatingBar: OverlayFloatingBar? = null
     private var isOverlayVisible = false
     private var isOverlayLocked = false
+
+    init {
+        scope.launch {
+            scriptRunner.executionState.collect { state ->
+                when (state) {
+                    is ExecutionState.Running -> {
+                        targetViews.forEach { view ->
+                            view.setTouchThrough(true)
+                            view.setActiveStep(state.currentStep)
+                        }
+                        floatingBar?.setPlayState(isPlaying = true, isPaused = false)
+                    }
+                    is ExecutionState.Paused -> {
+                        targetViews.forEach { view ->
+                            view.setTouchThrough(false)
+                            view.setActiveStep(-1)
+                        }
+                        floatingBar?.setPlayState(isPlaying = false, isPaused = true)
+                    }
+                    else -> {
+                        targetViews.forEach { view ->
+                            view.setTouchThrough(false)
+                            view.setActiveStep(-1)
+                        }
+                        floatingBar?.setPlayState(isPlaying = false, isPaused = false)
+                    }
+                }
+            }
+        }
+    }
 
     fun initOverlay(settings: GlobalSettings) {
         this.globalSettings = settings

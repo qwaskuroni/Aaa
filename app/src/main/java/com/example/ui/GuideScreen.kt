@@ -78,16 +78,16 @@ fun GuideScreen(onBack: () -> Unit) {
 
         GuideStepCard(
             stepNumber = "3",
-            title = "Configure Tap & Swipe Durations",
-            description = "Tap directly on any target circle badge to open its settings dialog. Set custom delays before click (in milliseconds) and press hold durations."
+            title = "Configure Actions (Text Input, Back, Swipes, Delays)",
+            description = "Tap on any target badge (#1, #2, #3...) to customize its action type. Select 'Tap' for clicking buttons (e.g. Back button or Send button), or 'Text Input' to automatically type message text into input fields! Set custom delays in milliseconds between steps."
         )
 
         Spacer(modifier = Modifier.height(12.dp))
 
         GuideStepCard(
             stepNumber = "4",
-            title = "Run & Save Macro Scripts",
-            description = "Press Play ▶ on the floating bar to start automation. Save your favorite setups into the Macro Scripts Library to reuse anytime!"
+            title = "Sequential Continuous Execution & Looping",
+            description = "Press Play ▶ on the floating bar. The clicker executes Target 1 -> Target 2 -> Target 3 (Text Input) -> Target 4 (Send) in exact sequence. Once the final target finishes, it seamlessly loops back to Target 1 continuously!"
         )
     }
 }
