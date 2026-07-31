@@ -130,9 +130,9 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                 // 2. EVENT: Scan Active Chat Node via Accessibility or Scanner Target
                 logAndSetState(MasterEngineState.ScanningChat, "Scanning active chat screen...")
                 accessibility?.performTap(settings.scannerX.toFloat(), settings.scannerY.toFloat())
-                delay(300L)
+                delay(400L)
 
-                val chatContent = scanChatWindow(accessibility)
+                val chatContent = scanChatWindow(accessibility, settings.scannerX, settings.scannerY)
                 val scannedText = chatContent.text
                 val isVoice = chatContent.isVoiceMessage
 
@@ -245,38 +245,83 @@ class MasterAutomationEngine private constructor(private val context: Context) {
         return exactNonTextKeywords.any { lower == it || lower.startsWith(it) }
     }
 
-    private fun scanChatWindow(service: AutoClickerAccessibilityService?): ScannedChatResult {
+    private data class ChatNodeItem(
+        val text: String,
+        val top: Int,
+        val centerX: Int,
+        val isIncoming: Boolean
+    )
+
+    private fun scanChatWindow(
+        service: AutoClickerAccessibilityService?,
+        scannerX: Int = 0,
+        scannerY: Int = 0
+    ): ScannedChatResult {
         val root = service?.rootInActiveWindow ?: return ScannedChatResult()
 
-        val textNodes = mutableListOf<String>()
-        var isVoice = false
+        val displayMetrics = service.resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
 
-        // Common toolbar/header elements to ignore when reading message content
+        // Filter out system UI, headers, profile info, and action buttons
         val headerIgnoreList = listOf(
             "video call", "voice call", "call", "search", "back", "imo",
             "more options", "online", "typing...", "last seen", "details",
-            "group info", "tap for settings"
+            "group info", "tap for settings", "type a message", "type message",
+            "message", "sent", "delivered", "read", "seen", "yesterday", "today",
+            "from \"phone number\"", "safety tools", "block", "accept",
+            "common contacts", "common groups"
         )
+
+        var isVoice = false
+        val allChatNodes = mutableListOf<ChatNodeItem>()
+
+        // Chat vertical boundaries (ignore action bar & profile header at top, ignore input box at bottom)
+        val topBoundary = (screenHeight * 0.10).toInt()
+        val bottomBoundary = (screenHeight * 0.86).toInt()
 
         fun traverse(node: AccessibilityNodeInfo?) {
             if (node == null) return
 
             val nodeText = node.text?.toString()?.trim() ?: ""
             val contentDesc = node.contentDescription?.toString()?.trim() ?: ""
-            val combined = "$nodeText $contentDesc".trim()
+            val rawCombined = "$nodeText $contentDesc".trim()
 
-            if (combined.isNotBlank()) {
-                val lower = combined.lowercase()
+            if (rawCombined.isNotBlank()) {
+                val lower = rawCombined.lowercase()
 
-                // Check for voice message indicators
                 if (lower.contains("voice message") || lower.contains("audio") || lower.contains("ভয়েস") || lower == "a") {
                     isVoice = true
                 }
 
-                // Filter out standard header buttons so they don't spoil chat message content
-                val isHeaderButton = headerIgnoreList.any { lower == it }
-                if (!isHeaderButton) {
-                    textNodes.add(combined)
+                val isHeaderOrSystem = headerIgnoreList.any { lower == it || lower.startsWith(it) }
+
+                if (!isHeaderOrSystem) {
+                    val rect = android.graphics.Rect()
+                    node.getBoundsInScreen(rect)
+
+                    // Keep nodes strictly inside the middle chat message area
+                    if (rect.top >= topBoundary && rect.bottom <= bottomBoundary && rect.height() > 10) {
+                        // Clean trailing timestamps from message string (e.g., "আমি কাজকরতে চাই 9:32 AM")
+                        val cleanText = rawCombined
+                            .replace(Regex("\\s*\\d{1,2}:\\d{2}\\s*(AM|PM|am|pm)?.*$"), "")
+                            .trim()
+
+                        if (cleanText.isNotBlank() && !cleanText.matches(Regex("^(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|জানু|ফেব্রু|মার্চ|এপ্রিল|মে|জুন|জুলাই|আগস্ট|সেপ্ট|অক্টো|নভে|ডিসে).*$", RegexOption.IGNORE_CASE))) {
+                            val centerX = rect.centerX()
+                            // Incoming customer messages are left-aligned (centerX < 52% of screen width)
+                            val isIncoming = centerX < (screenWidth * 0.52)
+
+                            allChatNodes.add(
+                                ChatNodeItem(
+                                    text = cleanText,
+                                    top = rect.top,
+                                    centerX = centerX,
+                                    isIncoming = isIncoming
+                                )
+                            )
+                        }
+                    }
                 }
             }
 
@@ -287,9 +332,30 @@ class MasterAutomationEngine private constructor(private val context: Context) {
 
         traverse(root)
 
-        val joinedText = textNodes.takeLast(3).joinToString(" ")
+        // Sort nodes vertically from top to bottom
+        allChatNodes.sortBy { it.top }
+
+        // Find the index of my last outgoing message
+        val lastOutgoingIndex = allChatNodes.indexOfLast { !it.isIncoming }
+
+        // Extract customer messages sent AFTER my last response
+        val customerNodesToProcess = if (lastOutgoingIndex != -1) {
+            allChatNodes.subList(lastOutgoingIndex + 1, allChatNodes.size).filter { it.isIncoming }
+        } else {
+            allChatNodes.filter { it.isIncoming }
+        }
+
+        // Fallback if no new customer messages were found after last outgoing index
+        val finalCustomerNodes = if (customerNodesToProcess.isNotEmpty()) {
+            customerNodesToProcess
+        } else {
+            allChatNodes.filter { it.isIncoming }.takeLast(5)
+        }
+
+        val finalScannedText = finalCustomerNodes.joinToString(" ") { it.text }.trim()
+
         return ScannedChatResult(
-            text = joinedText,
+            text = finalScannedText,
             isVoiceMessage = isVoice
         )
     }
