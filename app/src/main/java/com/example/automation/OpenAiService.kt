@@ -33,12 +33,16 @@ class OpenAiService {
             conn.connectTimeout = 15000
             conn.readTimeout = 15000
 
+            val formattedSystemPrompt = systemPrompt.ifBlank {
+                "আপনি একজন স্বাভাবিক চ্যাট সহকারী। মানুষের মত সংক্ষেপে ১-২ লাইনে উত্তর দিন।"
+            } + " (Important Instruction: Keep the response human-like, polite, natural, and strictly within 1-2 sentences in the same language as the user)."
+
             val jsonBody = JSONObject().apply {
-                put("model", modelName)
+                put("model", "gpt-4o-mini") // Strictly enforcement of gpt-4o-mini model
                 val messages = JSONArray().apply {
                     put(JSONObject().apply {
                         put("role", "system")
-                        put("content", systemPrompt.ifBlank { "You are a helpful assistant replying on IMO chat." })
+                        put("content", formattedSystemPrompt)
                     })
                     put(JSONObject().apply {
                         put("role", "user")
@@ -46,7 +50,7 @@ class OpenAiService {
                     })
                 }
                 put("messages", messages)
-                put("max_tokens", 150)
+                put("max_tokens", 120)
                 put("temperature", 0.7)
             }
 
@@ -84,3 +88,4 @@ class OpenAiService {
         private const val TAG = "OpenAiService"
     }
 }
+

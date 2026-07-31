@@ -127,12 +127,36 @@ class MasterAutomationEngine private constructor(private val context: Context) {
 
                 delay(1200L) // Wait for chat window to render
 
+                // Check for Voice / Audio message before scanning
+                val notifLower = text.lowercase()
+                val isAudioNotification = notifLower.contains("voice message") ||
+                        notifLower.contains("audio") ||
+                        text.contains("ভয়েস") ||
+                        notifLower.contains("0:") || notifLower.contains("1:")
+
+                val hasVoiceInWindow = checkForVoiceInWindow(accessibility)
+
+                if (isAudioNotification || hasVoiceInWindow) {
+                    logAndSetState(MasterEngineState.ConvertingAudioToText, "Voice message detected. Triggering Audio 'A' button...")
+                    findAndClickAudioToTextButton(accessibility, settings.audioToTextX, settings.audioToTextY)
+                    delay(1200L) // Wait 1 second for audio-to-text conversion to finish
+                }
+
                 // 2. EVENT: Scan Active Chat Node via Accessibility or Scanner Target
                 logAndSetState(MasterEngineState.ScanningChat, "Scanning active chat screen...")
                 accessibility?.performTap(settings.scannerX.toFloat(), settings.scannerY.toFloat())
-                delay(400L)
+                delay(300L)
 
-                val chatContent = scanChatWindow(accessibility, settings.scannerX, settings.scannerY)
+                var chatContent = scanChatWindow(accessibility, settings.scannerX, settings.scannerY)
+
+                // Secondary check: if voice detected during scan and not yet converted
+                if (chatContent.isVoiceMessage && !isAudioNotification && !hasVoiceInWindow) {
+                    logAndSetState(MasterEngineState.ConvertingAudioToText, "Audio detected during scan. Clicking Audio 'A' button...")
+                    findAndClickAudioToTextButton(accessibility, settings.audioToTextX, settings.audioToTextY)
+                    delay(1200L)
+                    chatContent = scanChatWindow(accessibility, settings.scannerX, settings.scannerY)
+                }
+
                 val scannedText = chatContent.text
                 val isVoice = chatContent.isVoiceMessage
 
@@ -148,19 +172,6 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                     delay(500L)
                     resetToIdle()
                     return@launch
-                }
-
-                // Check for Voice / Audio message
-                if (isVoice || messageForAi.lowercase().contains("voice message") || messageForAi.contains("ভয়েস")) {
-                    logAndSetState(MasterEngineState.ConvertingAudioToText, "Voice message detected. Triggering Audio-to-Text ('A' icon)...")
-                    accessibility?.performTap(settings.audioToTextX.toFloat(), settings.audioToTextY.toFloat())
-                    delay(1500L) // Wait for text conversion
-
-                    // Re-scan after audio-to-text
-                    val reScanned = scanChatWindow(accessibility)
-                    if (reScanned.text.isNotBlank()) {
-                        messageForAi = reScanned.text
-                    }
                 }
 
                 if (messageForAi.isBlank()) {
@@ -358,6 +369,100 @@ class MasterAutomationEngine private constructor(private val context: Context) {
             text = finalScannedText,
             isVoiceMessage = isVoice
         )
+    }
+
+    private fun checkForVoiceInWindow(service: AutoClickerAccessibilityService?): Boolean {
+        val root = service?.rootInActiveWindow ?: return false
+        var voiceFound = false
+
+        fun search(node: AccessibilityNodeInfo?) {
+            if (node == null || voiceFound) return
+            val text = node.text?.toString()?.trim() ?: ""
+            val contentDesc = node.contentDescription?.toString()?.trim() ?: ""
+            val combined = "$text $contentDesc".lowercase()
+
+            if (combined.contains("voice message") ||
+                combined.contains("audio") ||
+                combined.contains("ভয়েস") ||
+                combined == "a" || combined == "->a" || combined.contains("→a") ||
+                combined.matches(Regex(".*\\d{1,2}:\\d{2}.*"))
+            ) {
+                voiceFound = true
+                return
+            }
+
+            for (i in 0 until node.childCount) {
+                search(node.getChild(i))
+                if (voiceFound) return
+            }
+        }
+
+        search(root)
+        return voiceFound
+    }
+
+    private suspend fun findAndClickAudioToTextButton(
+        service: AutoClickerAccessibilityService?,
+        fallbackX: Int,
+        fallbackY: Int
+    ): Boolean {
+        val root = service?.rootInActiveWindow
+        var targetNode: AccessibilityNodeInfo? = null
+        var targetRect = android.graphics.Rect()
+
+        if (root != null) {
+            fun searchTree(node: AccessibilityNodeInfo?) {
+                if (node == null || targetNode != null) return
+
+                val text = node.text?.toString()?.trim() ?: ""
+                val contentDesc = node.contentDescription?.toString()?.trim() ?: ""
+                val viewId = node.viewIdResourceName?.toString() ?: ""
+
+                val isAButton = text.equals("A", ignoreCase = true) ||
+                        text.equals("->A", ignoreCase = true) ||
+                        text.equals("-> A", ignoreCase = true) ||
+                        text.contains("→A") ||
+                        text.contains("文A") ||
+                        contentDesc.equals("A", ignoreCase = true) ||
+                        contentDesc.contains("transcribe", ignoreCase = true) ||
+                        viewId.contains("transcribe") ||
+                        viewId.contains("stt")
+
+                if (isAButton) {
+                    val rect = android.graphics.Rect()
+                    node.getBoundsInScreen(rect)
+                    if (rect.width() > 0 && rect.height() > 0 && rect.top > 100) {
+                        targetNode = node
+                        targetRect = rect
+                        return
+                    }
+                }
+
+                for (i in 0 until node.childCount) {
+                    searchTree(node.getChild(i))
+                    if (targetNode != null) return
+                }
+            }
+
+            searchTree(root)
+        }
+
+        if (targetNode != null) {
+            val centerX = targetRect.centerX().toFloat()
+            val centerY = targetRect.centerY().toFloat()
+            Log.d(TAG, "Audio 'A' button node detected at ($centerX, $centerY). Triggering click...")
+            targetNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            service?.performTap(centerX, centerY)
+            return true
+        }
+
+        if (fallbackX > 0 && fallbackY > 0) {
+            Log.d(TAG, "Audio 'A' button accessibility node not found, tapping fallback target ($fallbackX, $fallbackY)")
+            service?.performTap(fallbackX.toFloat(), fallbackY.toFloat())
+            return true
+        }
+
+        return false
     }
 
     private fun logAndSetState(state: MasterEngineState, message: String) {

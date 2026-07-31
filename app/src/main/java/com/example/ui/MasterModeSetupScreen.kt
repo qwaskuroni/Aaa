@@ -373,17 +373,17 @@ fun MasterModeSetupScreen(
                         FilterChip(
                             selected = false,
                             onClick = {
-                                systemPromptText = "আপনি একজন অত্যন্ত বিনয়ী এবং সহায়ক ইমু চ্যাট অ্যাসিস্ট্যান্ট। সংক্ষিপ্ত এবং স্বাভাবিক বাংলায় উত্তর দিন।"
+                                systemPromptText = "আপনি একজন অত্যন্ত বিনয়ী ও বাস্তবসম্মত চ্যাট সহকারী। ব্যবহারকারীর বার্তা বিশ্লেষণ করে ট্রেনিং প্রম্পট অনুসারেই মানুষের মতো ১-২ লাইনের মধ্যে স্বাভাবিক ও সংক্ষিপ্ত উত্তর দিবেন। অতিরিক্ত দীর্ঘ উত্তর দেওয়া নিষেধ।"
                             },
-                            label = { Text("Bengali Polite", fontSize = 11.sp) },
+                            label = { Text("Human 1-2 Line Bengali", fontSize = 11.sp) },
                             colors = FilterChipDefaults.filterChipColors(containerColor = Color(0xFF0F172A), labelColor = Color(0xFF38BDF8))
                         )
                         FilterChip(
                             selected = false,
                             onClick = {
-                                systemPromptText = "You are a professional customer support assistant for IMO chat. Keep responses clear, concise, and helpful."
+                                systemPromptText = "You are a realistic human assistant. Analyze user messages and training prompt carefully to reply naturally in 1-2 concise lines only."
                             },
-                            label = { Text("English Pro", fontSize = 11.sp) },
+                            label = { Text("Concise 1-2 Line English", fontSize = 11.sp) },
                             colors = FilterChipDefaults.filterChipColors(containerColor = Color(0xFF0F172A), labelColor = Color(0xFFC084FC))
                         )
                     }

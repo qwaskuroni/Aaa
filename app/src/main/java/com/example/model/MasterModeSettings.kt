@@ -2,7 +2,7 @@ package com.example.model
 
 data class MasterModeSettings(
     val openAiApiKey: String = "",
-    val systemPrompt: String = "You are a helpful, brief, and polite assistant replying on IMO chat. Reply concisely in the same language as the incoming message.",
+    val systemPrompt: String = "আপনি একজন অত্যন্ত বিনয়ী ও বাস্তবসম্মত চ্যাট সহকারী। ব্যবহারকারীর বার্তা বিশ্লেষণ করে ট্রেনিং প্রম্পট অনুসারেই মানুষের মতো ১-২ লাইনের মধ্যে স্বাভাবিক ও সংক্ষিপ্ত উত্তর দিবেন। অতিরিক্ত দীর্ঘ উত্তর দেওয়া নিষেধ।",
     val isEnabled: Boolean = false,
     val notificationX: Int = 540,
     val notificationY: Int = 220,
