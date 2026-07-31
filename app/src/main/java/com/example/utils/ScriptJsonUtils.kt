@@ -39,6 +39,10 @@ object ScriptJsonUtils {
             targetObj.put("skipMutedChats", target.skipMutedChats)
             targetObj.put("autoScroll", target.autoScroll)
             targetObj.put("stopAtEnd", target.stopAtEnd)
+            targetObj.put("excelFilePath", target.excelFilePath)
+            targetObj.put("excelRulesContent", target.excelRulesContent)
+            targetObj.put("matchThreshold", target.matchThreshold.toDouble())
+            targetObj.put("fallbackReply", target.fallbackReply)
             targetsArray.put(targetObj)
         }
 
@@ -89,7 +93,11 @@ object ScriptJsonUtils {
                             skipPinnedChats = obj.optBoolean("skipPinnedChats", false),
                             skipMutedChats = obj.optBoolean("skipMutedChats", false),
                             autoScroll = obj.optBoolean("autoScroll", true),
-                            stopAtEnd = obj.optBoolean("stopAtEnd", true)
+                            stopAtEnd = obj.optBoolean("stopAtEnd", true),
+                            excelFilePath = obj.optString("excelFilePath", ""),
+                            excelRulesContent = obj.optString("excelRulesContent", ""),
+                            matchThreshold = obj.optDouble("matchThreshold", 0.3).toFloat(),
+                            fallbackReply = obj.optString("fallbackReply", "")
                         )
                     )
                 }

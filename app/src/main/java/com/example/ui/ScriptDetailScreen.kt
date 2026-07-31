@@ -276,6 +276,40 @@ fun ScriptDetailScreen(
                             val newOrder = targets.size + 1
                             targets = targets + ClickTarget(
                                 order = newOrder,
+                                type = TargetType.SMART_MESSAGE_SCANNER,
+                                delayMs = 500L,
+                                label = "Smart Message Scanner #$newOrder"
+                            )
+                        },
+                        modifier = Modifier.testTag("btn_add_smart_scanner_target")
+                    ) {
+                        Text(text = "🔍 + Smart Scanner", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF3B82F6))
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val newOrder = targets.size + 1
+                            targets = targets + ClickTarget(
+                                order = newOrder,
+                                type = TargetType.XLS_SMART_REPLY,
+                                delayMs = 500L,
+                                label = "XLS Smart Reply #$newOrder"
+                            )
+                        },
+                        modifier = Modifier.testTag("btn_add_xls_reply_target")
+                    ) {
+                        Text(text = "📊 + XLS Reply", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF8B5CF6))
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val newOrder = targets.size + 1
+                            targets = targets + ClickTarget(
+                                order = newOrder,
                                 type = TargetType.OPEN_UNREAD_CHATS,
                                 delayMs = 500L,
                                 label = "Open Unread Chats #$newOrder"
@@ -531,51 +565,80 @@ fun TargetDetailCard(
                 )
             }
 
-            if (target.type == TargetType.OPEN_UNREAD_CHATS) {
+            if (target.type == TargetType.SMART_MESSAGE_SCANNER) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "📩 Open Unread Chats Settings",
+                    text = "🔍 Smart Message Scanner",
                     fontSize = 12.sp,
-                    color = Color(0xFF10B981),
+                    color = Color(0xFF3B82F6),
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "✓ Automatically extracts the latest unread customer text message.\n✓ Ignores voice, call logs, photos, videos, stickers, gifs, urls, emoji-only & system msgs.\n✓ Saves result in variable: {{SCANNED_MESSAGE}}",
+                    fontSize = 10.sp,
+                    color = Color(0xFF94A3B8)
+                )
+            }
+
+            if (target.type == TargetType.XLS_SMART_REPLY) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                val excelLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.GetContent()
+                ) { uri: android.net.Uri? ->
+                    if (uri != null) {
+                        try {
+                            context.contentResolver.takePersistableUriPermission(
+                                uri,
+                                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                            )
+                        } catch (e: Exception) {
+                            // ignore
+                        }
+                        onUpdate(target.copy(excelFilePath = uri.toString()))
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "📊 XLS Smart Reply Engine",
+                    fontSize = 12.sp,
+                    color = Color(0xFF8B5CF6),
                     fontWeight = FontWeight.Bold
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = target.minUnreadCount.toString(),
-                        onValueChange = {
-                            val count = it.toIntOrNull() ?: 1
-                            onUpdate(target.copy(minUnreadCount = count))
-                        },
-                        label = { Text("Min Badge Count", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        singleLine = true
-                    )
-
-                    OutlinedTextField(
-                        value = target.maxChatsToOpen.toString(),
-                        onValueChange = {
-                            val max = it.toIntOrNull() ?: 0
-                            onUpdate(target.copy(maxChatsToOpen = max))
-                        },
-                        label = { Text("Max Chats (0=All)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        modifier = Modifier.weight(1f),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color.White
-                        ),
-                        singleLine = true
-                    )
+                Button(
+                    onClick = { excelLauncher.launch("*/*") },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8B5CF6)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = "📁 Choose Excel (.xlsx) File", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
+                if (target.excelFilePath.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(text = "File URI: ${target.excelFilePath}", fontSize = 10.sp, color = Color(0xFF38BDF8))
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "✓ Auto scans unread message badges, opens chat, executes macro steps & continues.",
+                    text = "Or Enter Rules (Keyword : Reply):",
+                    fontSize = 10.sp,
+                    color = Color(0xFF94A3B8)
+                )
+                OutlinedTextField(
+                    value = target.excelRulesContent,
+                    onValueChange = { onUpdate(target.copy(excelRulesContent = it)) },
+                    placeholder = { Text("namber, bkash, nagad : 01889411602\nprice : 500 tk", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    minLines = 2,
+                    maxLines = 4,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    )
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "✓ Matches {{SCANNED_MESSAGE}} with keywords & stores reply in variable: {{AUTO_REPLY}}",
                     fontSize = 10.sp,
                     color = Color(0xFF10B981)
                 )

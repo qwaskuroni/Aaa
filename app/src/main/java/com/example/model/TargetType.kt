@@ -10,6 +10,8 @@ enum class TargetType(val displayName: String) {
     CLIPBOARD_PASTE("Clipboard Paste"),
     VIDEO_PLAY("Video Play"),
     OPEN_UNREAD_CHATS("Open Unread Chats"),
+    SMART_MESSAGE_SCANNER("Smart Message Scanner"),
+    XLS_SMART_REPLY("XLS Smart Reply"),
     SYSTEM_BACK("Back"),
     SYSTEM_HOME("Home"),
     SYSTEM_RECENTS("Recent Apps")

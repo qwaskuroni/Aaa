@@ -68,7 +68,8 @@ object GestureExecutor {
             TargetType.TEXT_INPUT -> {
                 service.performTap(startX, startY, 50L)
                 kotlinx.coroutines.delay(200L)
-                service.inputText(target.textContent)
+                val resolvedText = com.example.automation.MacroContext.resolveVariables(target.textContent)
+                service.inputText(resolvedText)
             }
             TargetType.CLIPBOARD_PASTE -> {
                 service.performTap(startX, startY, 50L)
@@ -89,6 +90,21 @@ object GestureExecutor {
                     stopAtEnd = target.stopAtEnd
                 )
                 com.example.automation.UnreadChatDetector.openNextUnreadChat(service, unreadSettings)
+            }
+            TargetType.SMART_MESSAGE_SCANNER -> {
+                val scanned = com.example.automation.SmartMessageScanner.scanLatestCustomerMessage(service)
+                scanned.isNotEmpty()
+            }
+            TargetType.XLS_SMART_REPLY -> {
+                val reply = com.example.automation.XlsSmartReplyEngine.processAutoReply(
+                    context = service.applicationContext,
+                    excelFilePath = target.excelFilePath,
+                    excelRulesContent = target.excelRulesContent,
+                    scannedMessage = com.example.automation.MacroContext.scannedMessage,
+                    matchThreshold = target.matchThreshold,
+                    fallbackReply = target.fallbackReply
+                )
+                reply.isNotEmpty()
             }
             TargetType.SYSTEM_BACK -> {
                 service.performBack()

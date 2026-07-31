@@ -45,7 +45,11 @@ object DataMapper {
             skipPinnedChats = entity.skipPinnedChats,
             skipMutedChats = entity.skipMutedChats,
             autoScroll = entity.autoScroll,
-            stopAtEnd = entity.stopAtEnd
+            stopAtEnd = entity.stopAtEnd,
+            excelFilePath = entity.excelFilePath,
+            excelRulesContent = entity.excelRulesContent,
+            matchThreshold = entity.matchThreshold,
+            fallbackReply = entity.fallbackReply
         )
     }
 
@@ -85,7 +89,11 @@ object DataMapper {
             skipPinnedChats = model.skipPinnedChats,
             skipMutedChats = model.skipMutedChats,
             autoScroll = model.autoScroll,
-            stopAtEnd = model.stopAtEnd
+            stopAtEnd = model.stopAtEnd,
+            excelFilePath = model.excelFilePath,
+            excelRulesContent = model.excelRulesContent,
+            matchThreshold = model.matchThreshold,
+            fallbackReply = model.fallbackReply
         )
     }
 }

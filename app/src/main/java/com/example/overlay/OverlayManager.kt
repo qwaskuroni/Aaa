@@ -418,6 +418,12 @@ class OverlayManager(
         dialogBinding.cbAutoScroll.isChecked = target.autoScroll
         dialogBinding.cbStopAtEnd.isChecked = target.stopAtEnd
 
+        // Populate XLS Smart Reply Dialog Controls
+        dialogBinding.etExcelFilePath.setText(target.excelFilePath)
+        dialogBinding.etExcelRulesContent.setText(target.excelRulesContent)
+        dialogBinding.etMatchThreshold.setText(target.matchThreshold.toString())
+        dialogBinding.etFallbackReply.setText(target.fallbackReply)
+
         val orderOptions = listOf("Top → Bottom", "Bottom → Top")
         val orderAdapter = android.widget.ArrayAdapter(
             context,
@@ -449,6 +455,8 @@ class OverlayManager(
             dialogBinding.layoutTextInput.visibility = if (type == TargetType.TEXT_INPUT) android.view.View.VISIBLE else android.view.View.GONE
             dialogBinding.layoutVideoInput.visibility = if (type == TargetType.VIDEO_PLAY) android.view.View.VISIBLE else android.view.View.GONE
             dialogBinding.layoutUnreadChatsInput.visibility = if (type == TargetType.OPEN_UNREAD_CHATS) android.view.View.VISIBLE else android.view.View.GONE
+            dialogBinding.layoutSmartScannerInput.visibility = if (type == TargetType.SMART_MESSAGE_SCANNER) android.view.View.VISIBLE else android.view.View.GONE
+            dialogBinding.layoutXlsReplyInput.visibility = if (type == TargetType.XLS_SMART_REPLY) android.view.View.VISIBLE else android.view.View.GONE
         }
 
         updateFieldsVisibility(target.type)
@@ -560,6 +568,11 @@ class OverlayManager(
             val autoScroll = dialogBinding.cbAutoScroll.isChecked
             val stopAtEnd = dialogBinding.cbStopAtEnd.isChecked
 
+            val excelFilePath = dialogBinding.etExcelFilePath.text.toString()
+            val excelRulesContent = dialogBinding.etExcelRulesContent.text.toString()
+            val matchThreshold = dialogBinding.etMatchThreshold.text.toString().toFloatOrNull() ?: 0.3f
+            val fallbackReply = dialogBinding.etFallbackReply.text.toString()
+
             val updatedTarget = target.copy(
                 type = selectedType,
                 delayMs = delayMs,
@@ -574,6 +587,10 @@ class OverlayManager(
                 skipMutedChats = skipMuted,
                 autoScroll = autoScroll,
                 stopAtEnd = stopAtEnd,
+                excelFilePath = excelFilePath,
+                excelRulesContent = excelRulesContent,
+                matchThreshold = matchThreshold,
+                fallbackReply = fallbackReply,
                 label = "${selectedType.displayName} #${target.order}"
             )
 

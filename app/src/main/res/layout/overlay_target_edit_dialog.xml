@@ -226,6 +226,158 @@
             android:textSize="11sp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/layoutSmartScannerInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔍 Smart Message Scanner Settings:"
+            android:textColor="#38BDF8"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="✓ Automatically extracts the latest unread customer text."
+            android:textColor="#CBD5E1"
+            android:textSize="11sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="✓ Ignores voice notes, call logs, photos, videos, stickers, gifs, urls, emoji-only, &amp; system msgs."
+            android:textColor="#94A3B8"
+            android:textSize="10sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Saved in Variable: {{SCANNED_MESSAGE}}"
+            android:textColor="#10B981"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutXlsReplyInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📊 XLS Smart Reply Engine:"
+            android:textColor="#A855F7"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btnPickExcelFile"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:backgroundTint="#8B5CF6"
+            android:text="📁 Upload Excel (.xlsx) File"
+            android:textAllCaps="false"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etExcelFilePath"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="#0F172A"
+            android:hint="Selected Excel File Path or URI..."
+            android:textColorHint="#64748B"
+            android:padding="6dp"
+            android:textColor="#A855F7"
+            android:textSize="11sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Or Enter Rules (Keyword : Reply):"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etExcelRulesContent"
+            android:layout_width="match_parent"
+            android:layout_height="70dp"
+            android:layout_marginTop="2dp"
+            android:background="#0F172A"
+            android:gravity="top|start"
+            android:hint="Col A Keyword : Col B Reply\nExample:\nনাম্বার, বিকাশ, নগদ : 01889411602\nদাম কত : ৫০০ টাকা"
+            android:textColorHint="#64748B"
+            android:inputType="textMultiLine"
+            android:padding="6dp"
+            android:textColor="#FFFFFF"
+            android:textSize="11sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Minimum Match Confidence (0.1 - 1.0):"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etMatchThreshold"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#0F172A"
+            android:inputType="numberDecimal"
+            android:padding="6dp"
+            android:text="0.3"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Fallback Reply (If no match):"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etFallbackReply"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#0F172A"
+            android:padding="6dp"
+            android:hint="Leave empty or fallback message"
+            android:textColorHint="#64748B"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="✓ Saved in Variable: {{AUTO_REPLY}}"
+            android:textColor="#10B981"
+            android:textSize="11sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

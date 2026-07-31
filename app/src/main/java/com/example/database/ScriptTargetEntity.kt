@@ -40,5 +40,9 @@ data class ScriptTargetEntity(
     val skipPinnedChats: Boolean = false,
     val skipMutedChats: Boolean = false,
     val autoScroll: Boolean = true,
-    val stopAtEnd: Boolean = true
+    val stopAtEnd: Boolean = true,
+    val excelFilePath: String = "",
+    val excelRulesContent: String = "",
+    val matchThreshold: Float = 0.3f,
+    val fallbackReply: String = ""
 )

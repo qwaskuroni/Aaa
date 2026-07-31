@@ -29,6 +29,7 @@ class ScriptRunner(private val feedbackUtils: FeedbackUtils) {
         stopScript()
         isPaused = false
         com.example.automation.UnreadChatDetector.resetSession()
+        com.example.automation.MacroContext.reset()
 
         runnerJob = scope.launch {
             val targets = script.targets
