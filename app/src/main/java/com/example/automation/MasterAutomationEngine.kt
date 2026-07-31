@@ -2,6 +2,7 @@ package com.example.automation
 
 import android.app.PendingIntent
 import android.content.Context
+import android.graphics.Rect
 import android.service.notification.StatusBarNotification
 import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
@@ -218,11 +219,27 @@ class MasterAutomationEngine private constructor(private val context: Context) {
                 }
                 delay(500L)
 
-                // 5. Send Target
+                // 5. Send Target: Find, click, retry and verify message sending
                 logAndSetState(MasterEngineState.SendingMessage, "Triggering Send Target...")
-                accessibility?.performTap(settings.sendX.toFloat(), settings.sendY.toFloat())
                 feedbackUtils.playClickSound()
-                delay(800L) // Wait for message to be sent
+
+                for (attempt in 1..3) {
+                    findAndClickSendButton(accessibility, settings.sendX, settings.sendY)
+                    delay(700L) // Wait to observe if message was sent
+
+                    // Verify if text input box is cleared
+                    val checkRoot = accessibility?.rootInActiveWindow
+                    val checkInput = checkRoot?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+                    val currentInputText = checkInput?.text?.toString() ?: ""
+
+                    if (currentInputText.isBlank()) {
+                        Log.d(TAG, "Send confirmed! Input box is cleared.")
+                        break
+                    } else {
+                        Log.w(TAG, "Send attempt $attempt: Input box still contains text ('$currentInputText'). Retrying send button click...")
+                    }
+                }
+                delay(500L)
 
                 // 6. Back Navigation Target
                 logAndSetState(MasterEngineState.NavigatingBack, "Triggering Back Navigation...")
@@ -371,22 +388,69 @@ class MasterAutomationEngine private constructor(private val context: Context) {
         )
     }
 
+    private fun isAButtonNode(node: AccessibilityNodeInfo?): Boolean {
+        if (node == null) return false
+
+        val text = node.text?.toString()?.trim() ?: ""
+        val contentDesc = node.contentDescription?.toString()?.trim() ?: ""
+        val viewId = node.viewIdResourceName?.toString()?.lowercase() ?: ""
+
+        if (text.isBlank() && contentDesc.isBlank() && viewId.isBlank()) return false
+
+        val combined = "$text $contentDesc".trim().lowercase()
+        val clean = combined.replace("\\s+".toRegex(), "")
+
+        // Check exact or clean button text/desc matches:
+        // "a", "->a", "→a", "\u2192a", "文a", "a/文", "➔a", "➜a"
+        val isExactMatch = clean == "a" ||
+                clean == "->a" ||
+                clean == "→a" ||
+                clean == "\u2192a" ||
+                clean == "文a" ||
+                clean == "a/文" ||
+                clean == "➔a" ||
+                clean == "➜a"
+
+        // Check if string contains an arrow/symbol AND the letter 'a'
+        val hasArrowAndA = (clean.contains("→") || clean.contains("->") || clean.contains("\u2192") || clean.contains("➔") || clean.contains("➜") || clean.contains("文")) && clean.contains("a")
+
+        // Check keywords in viewId or text/contentDesc
+        val isKeywordMatch = combined.contains("transcribe") ||
+                combined.contains("audio to text") ||
+                combined.contains("speech to text") ||
+                viewId.contains("transcribe") ||
+                viewId.contains("stt") ||
+                viewId.contains("audio_to_text")
+
+        return isExactMatch || hasArrowAndA || isKeywordMatch
+    }
+
     private fun checkForVoiceInWindow(service: AutoClickerAccessibilityService?): Boolean {
         val root = service?.rootInActiveWindow ?: return false
         var voiceFound = false
 
         fun search(node: AccessibilityNodeInfo?) {
             if (node == null || voiceFound) return
+
+            if (isAButtonNode(node)) {
+                voiceFound = true
+                return
+            }
+
             val text = node.text?.toString()?.trim() ?: ""
             val contentDesc = node.contentDescription?.toString()?.trim() ?: ""
             val combined = "$text $contentDesc".lowercase()
 
-            if (combined.contains("voice message") ||
-                combined.contains("audio") ||
-                combined.contains("ভয়েস") ||
-                combined == "a" || combined == "->a" || combined.contains("→a") ||
-                combined.matches(Regex(".*\\d{1,2}:\\d{2}.*"))
-            ) {
+            val isVoiceKeyword = combined.contains("voice message") ||
+                    combined.contains("audio") ||
+                    combined.contains("ভয়েস") ||
+                    combined.contains("voice")
+
+            // Match standalone audio duration like "0:30", "0:08" without AM/PM timestamp
+            val isAudioDuration = text.matches(Regex("^(0|1|2|3|4|5|6|7|8|9):\\d{2}$")) &&
+                    !combined.contains("am") && !combined.contains("pm")
+
+            if (isVoiceKeyword || isAudioDuration) {
                 voiceFound = true
                 return
             }
@@ -407,62 +471,180 @@ class MasterAutomationEngine private constructor(private val context: Context) {
         fallbackY: Int
     ): Boolean {
         val root = service?.rootInActiveWindow
-        var targetNode: AccessibilityNodeInfo? = null
-        var targetRect = android.graphics.Rect()
+        val displayMetrics = service?.resources?.displayMetrics
+        val screenHeight = displayMetrics?.heightPixels ?: 2400
+
+        val topBoundary = (screenHeight * 0.10).toInt()
+        val bottomBoundary = (screenHeight * 0.88).toInt()
+
+        val candidates = mutableListOf<Pair<AccessibilityNodeInfo, Rect>>()
 
         if (root != null) {
             fun searchTree(node: AccessibilityNodeInfo?) {
-                if (node == null || targetNode != null) return
+                if (node == null) return
 
-                val text = node.text?.toString()?.trim() ?: ""
-                val contentDesc = node.contentDescription?.toString()?.trim() ?: ""
-                val viewId = node.viewIdResourceName?.toString() ?: ""
-
-                val isAButton = text.equals("A", ignoreCase = true) ||
-                        text.equals("->A", ignoreCase = true) ||
-                        text.equals("-> A", ignoreCase = true) ||
-                        text.contains("→A") ||
-                        text.contains("文A") ||
-                        contentDesc.equals("A", ignoreCase = true) ||
-                        contentDesc.contains("transcribe", ignoreCase = true) ||
-                        viewId.contains("transcribe") ||
-                        viewId.contains("stt")
-
-                if (isAButton) {
-                    val rect = android.graphics.Rect()
+                if (isAButtonNode(node)) {
+                    val rect = Rect()
                     node.getBoundsInScreen(rect)
-                    if (rect.width() > 0 && rect.height() > 0 && rect.top > 100) {
-                        targetNode = node
-                        targetRect = rect
-                        return
+                    if (rect.width() > 0 && rect.height() > 0 && rect.top >= topBoundary && rect.bottom <= bottomBoundary) {
+                        candidates.add(Pair(node, rect))
                     }
                 }
 
                 for (i in 0 until node.childCount) {
                     searchTree(node.getChild(i))
-                    if (targetNode != null) return
                 }
             }
 
             searchTree(root)
         }
 
-        if (targetNode != null) {
+        if (candidates.isNotEmpty()) {
+            // Sort candidates by Y coordinate (top to bottom)
+            candidates.sortBy { it.second.top }
+
+            val selected = candidates.first()
+            val targetNode = selected.first
+            val targetRect = selected.second
+
             val centerX = targetRect.centerX().toFloat()
             val centerY = targetRect.centerY().toFloat()
-            Log.d(TAG, "Audio 'A' button node detected at ($centerX, $centerY). Triggering click...")
-            targetNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+
+            Log.d(TAG, "Audio 'A' button node detected at screen position ($centerX, $centerY). Triggering click...")
+
+            var curr: AccessibilityNodeInfo? = targetNode
+            var actionClicked = false
+            var depth = 0
+            while (curr != null && depth < 3) {
+                if (curr.isClickable) {
+                    actionClicked = curr.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    if (actionClicked) break
+                }
+                curr = curr.parent
+                depth++
+            }
+            if (!actionClicked) {
+                targetNode.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            }
+
             service?.performTap(centerX, centerY)
             return true
         }
 
+        // Fallback: If no 'A' button node found anywhere on screen, tap the fallback target
         if (fallbackX > 0 && fallbackY > 0) {
-            Log.d(TAG, "Audio 'A' button accessibility node not found, tapping fallback target ($fallbackX, $fallbackY)")
+            Log.d(TAG, "Audio 'A' button accessibility node not found in tree. Tapping fallback target ($fallbackX, $fallbackY)")
             service?.performTap(fallbackX.toFloat(), fallbackY.toFloat())
             return true
         }
 
         return false
+    }
+
+    private fun isSendButtonNode(node: AccessibilityNodeInfo?, screenWidth: Int, screenHeight: Int): Boolean {
+        if (node == null) return false
+
+        val text = node.text?.toString()?.trim() ?: ""
+        val contentDesc = node.contentDescription?.toString()?.trim() ?: ""
+        val viewId = node.viewIdResourceName?.toString()?.lowercase() ?: ""
+
+        val combined = "$text $contentDesc".lowercase()
+
+        val isSendKeyword = combined.contains("send") ||
+                combined.contains("পাঠান") ||
+                combined.contains("সেন্ট") ||
+                viewId.contains("send") ||
+                viewId.contains("btn_send") ||
+                viewId.contains("send_btn") ||
+                viewId.contains("send_icon")
+
+        if (isSendKeyword) return true
+
+        // Check if node is a button or clickable view on the bottom-right corner of screen (Send button area)
+        val rect = Rect()
+        node.getBoundsInScreen(rect)
+        val isInBottomRightRegion = rect.left >= (screenWidth * 0.65) && rect.top >= (screenHeight * 0.65) && rect.width() > 0 && rect.height() > 0 && rect.width() < (screenWidth * 0.35) && rect.height() < (screenHeight * 0.25)
+        val isClickableIcon = node.isClickable || (node.className?.contains("Button") == true || node.className?.contains("ImageView") == true || node.className?.contains("View") == true)
+
+        return isInBottomRightRegion && isClickableIcon
+    }
+
+    private suspend fun findAndClickSendButton(
+        service: AutoClickerAccessibilityService?,
+        fallbackX: Int,
+        fallbackY: Int
+    ): Boolean {
+        val root = service?.rootInActiveWindow
+        val displayMetrics = service?.resources?.displayMetrics
+        val screenWidth = displayMetrics?.widthPixels ?: 1080
+        val screenHeight = displayMetrics?.heightPixels ?: 2400
+
+        var sendNode: AccessibilityNodeInfo? = null
+        var sendRect = Rect()
+
+        if (root != null) {
+            fun searchTree(node: AccessibilityNodeInfo?) {
+                if (node == null || sendNode != null) return
+
+                if (isSendButtonNode(node, screenWidth, screenHeight)) {
+                    val rect = Rect()
+                    node.getBoundsInScreen(rect)
+                    if (rect.width() > 0 && rect.height() > 0) {
+                        sendNode = node
+                        sendRect = rect
+                        return
+                    }
+                }
+
+                for (i in 0 until node.childCount) {
+                    searchTree(node.getChild(i))
+                    if (sendNode != null) return
+                }
+            }
+
+            searchTree(root)
+        }
+
+        var clicked = false
+
+        // 1. If Send Node found in accessibility tree, click it
+        if (sendNode != null) {
+            val centerX = sendRect.centerX().toFloat()
+            val centerY = sendRect.centerY().toFloat()
+            Log.d(TAG, "Send button accessibility node detected at ($centerX, $centerY). Triggering click...")
+
+            var curr: AccessibilityNodeInfo? = sendNode
+            var actionClicked = false
+            var depth = 0
+            while (curr != null && depth < 3) {
+                if (curr.isClickable) {
+                    actionClicked = curr.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                    if (actionClicked) break
+                }
+                curr = curr.parent
+                depth++
+            }
+            if (!actionClicked) {
+                sendNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            }
+
+            service?.performTap(centerX, centerY)
+            clicked = true
+        }
+
+        // 2. Perform tap at fallback send target coordinates (settings.sendX, settings.sendY)
+        if (fallbackX > 0 && fallbackY > 0) {
+            Log.d(TAG, "Tapping send target coordinates ($fallbackX, $fallbackY)")
+            service?.performTap(fallbackX.toFloat(), fallbackY.toFloat())
+            clicked = true
+        }
+
+        // 3. Try performing action on focused input node
+        val activeRoot = service?.rootInActiveWindow
+        val focusedNode = activeRoot?.findFocus(AccessibilityNodeInfo.FOCUS_INPUT)
+        focusedNode?.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+
+        return clicked
     }
 
     private fun logAndSetState(state: MasterEngineState, message: String) {
