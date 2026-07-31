@@ -33,5 +33,12 @@ data class ScriptTargetEntity(
     val isLocked: Boolean = false,
     val textContent: String = "",
     val mediaUri: String = "",
-    val repeatCount: Int = 1
+    val repeatCount: Int = 1,
+    val minUnreadCount: Int = 1,
+    val processOrder: String = "TOP_TO_BOTTOM",
+    val maxChatsToOpen: Int = 0,
+    val skipPinnedChats: Boolean = false,
+    val skipMutedChats: Boolean = false,
+    val autoScroll: Boolean = true,
+    val stopAtEnd: Boolean = true
 )

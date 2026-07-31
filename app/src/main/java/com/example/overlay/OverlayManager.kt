@@ -410,6 +410,27 @@ class OverlayManager(
         dialogBinding.etTextInput.setText(target.textContent)
         dialogBinding.etVideoUri.setText(target.mediaUri.ifEmpty { target.textContent })
 
+        // Populate Unread Chats Dialog Controls
+        dialogBinding.etMinUnreadCount.setText(target.minUnreadCount.toString())
+        dialogBinding.etMaxChatsToOpen.setText(target.maxChatsToOpen.toString())
+        dialogBinding.cbSkipPinned.isChecked = target.skipPinnedChats
+        dialogBinding.cbSkipMuted.isChecked = target.skipMutedChats
+        dialogBinding.cbAutoScroll.isChecked = target.autoScroll
+        dialogBinding.cbStopAtEnd.isChecked = target.stopAtEnd
+
+        val orderOptions = listOf("Top → Bottom", "Bottom → Top")
+        val orderAdapter = android.widget.ArrayAdapter(
+            context,
+            android.R.layout.simple_spinner_item,
+            orderOptions
+        ).apply {
+            setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        }
+        dialogBinding.spinnerProcessOrder.adapter = orderAdapter
+        dialogBinding.spinnerProcessOrder.setSelection(
+            if (target.processOrder == com.example.model.UnreadChatSettings.ORDER_BOTTOM_TO_TOP) 1 else 0
+        )
+
         var currentDialogSize = target.sizePx
 
         // Populate Action Type Spinner
@@ -427,6 +448,7 @@ class OverlayManager(
         fun updateFieldsVisibility(type: TargetType) {
             dialogBinding.layoutTextInput.visibility = if (type == TargetType.TEXT_INPUT) android.view.View.VISIBLE else android.view.View.GONE
             dialogBinding.layoutVideoInput.visibility = if (type == TargetType.VIDEO_PLAY) android.view.View.VISIBLE else android.view.View.GONE
+            dialogBinding.layoutUnreadChatsInput.visibility = if (type == TargetType.OPEN_UNREAD_CHATS) android.view.View.VISIBLE else android.view.View.GONE
         }
 
         updateFieldsVisibility(target.type)
@@ -526,6 +548,18 @@ class OverlayManager(
             val textContent = dialogBinding.etTextInput.text.toString()
             val mediaUri = dialogBinding.etVideoUri.text.toString()
 
+            val minUnread = dialogBinding.etMinUnreadCount.text.toString().toIntOrNull() ?: 1
+            val maxChats = dialogBinding.etMaxChatsToOpen.text.toString().toIntOrNull() ?: 0
+            val processOrder = if (dialogBinding.spinnerProcessOrder.selectedItemPosition == 1) {
+                com.example.model.UnreadChatSettings.ORDER_BOTTOM_TO_TOP
+            } else {
+                com.example.model.UnreadChatSettings.ORDER_TOP_TO_BOTTOM
+            }
+            val skipPinned = dialogBinding.cbSkipPinned.isChecked
+            val skipMuted = dialogBinding.cbSkipMuted.isChecked
+            val autoScroll = dialogBinding.cbAutoScroll.isChecked
+            val stopAtEnd = dialogBinding.cbStopAtEnd.isChecked
+
             val updatedTarget = target.copy(
                 type = selectedType,
                 delayMs = delayMs,
@@ -533,6 +567,13 @@ class OverlayManager(
                 sizePx = sizePx.coerceIn(48f, 240f),
                 textContent = textContent,
                 mediaUri = mediaUri,
+                minUnreadCount = minUnread,
+                processOrder = processOrder,
+                maxChatsToOpen = maxChats,
+                skipPinnedChats = skipPinned,
+                skipMutedChats = skipMuted,
+                autoScroll = autoScroll,
+                stopAtEnd = stopAtEnd,
                 label = "${selectedType.displayName} #${target.order}"
             )
 

@@ -112,6 +112,7 @@ class TargetOverlayView(
             TargetType.TEXT_INPUT -> Color.parseColor("#A855F7")
             TargetType.CLIPBOARD_PASTE -> Color.parseColor("#10B981")
             TargetType.VIDEO_PLAY -> Color.parseColor("#FF2D55")
+            TargetType.OPEN_UNREAD_CHATS -> Color.parseColor("#10B981")
             TargetType.SYSTEM_BACK,
             TargetType.SYSTEM_HOME,
             TargetType.SYSTEM_RECENTS -> Color.parseColor("#EC4899")

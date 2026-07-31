@@ -32,6 +32,13 @@ object ScriptJsonUtils {
             targetObj.put("textContent", target.textContent)
             targetObj.put("mediaUri", target.mediaUri)
             targetObj.put("repeatCount", target.repeatCount)
+            targetObj.put("minUnreadCount", target.minUnreadCount)
+            targetObj.put("processOrder", target.processOrder)
+            targetObj.put("maxChatsToOpen", target.maxChatsToOpen)
+            targetObj.put("skipPinnedChats", target.skipPinnedChats)
+            targetObj.put("skipMutedChats", target.skipMutedChats)
+            targetObj.put("autoScroll", target.autoScroll)
+            targetObj.put("stopAtEnd", target.stopAtEnd)
             targetsArray.put(targetObj)
         }
 
@@ -75,7 +82,14 @@ object ScriptJsonUtils {
                             isLocked = obj.optBoolean("isLocked", false),
                             textContent = obj.optString("textContent", ""),
                             mediaUri = obj.optString("mediaUri", ""),
-                            repeatCount = obj.optInt("repeatCount", 1)
+                            repeatCount = obj.optInt("repeatCount", 1),
+                            minUnreadCount = obj.optInt("minUnreadCount", 1),
+                            processOrder = obj.optString("processOrder", "TOP_TO_BOTTOM"),
+                            maxChatsToOpen = obj.optInt("maxChatsToOpen", 0),
+                            skipPinnedChats = obj.optBoolean("skipPinnedChats", false),
+                            skipMutedChats = obj.optBoolean("skipMutedChats", false),
+                            autoScroll = obj.optBoolean("autoScroll", true),
+                            stopAtEnd = obj.optBoolean("stopAtEnd", true)
                         )
                     )
                 }

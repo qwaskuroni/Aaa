@@ -78,6 +78,18 @@ object GestureExecutor {
             TargetType.VIDEO_PLAY -> {
                 true
             }
+            TargetType.OPEN_UNREAD_CHATS -> {
+                val unreadSettings = com.example.model.UnreadChatSettings(
+                    minUnreadCount = target.minUnreadCount,
+                    processOrder = target.processOrder,
+                    maxChatsToOpen = target.maxChatsToOpen,
+                    skipPinnedChats = target.skipPinnedChats,
+                    skipMutedChats = target.skipMutedChats,
+                    autoScroll = target.autoScroll,
+                    stopAtEnd = target.stopAtEnd
+                )
+                com.example.automation.UnreadChatDetector.openNextUnreadChat(service, unreadSettings)
+            }
             TargetType.SYSTEM_BACK -> {
                 service.performBack()
             }

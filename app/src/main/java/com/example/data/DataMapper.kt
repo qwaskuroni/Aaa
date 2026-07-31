@@ -38,7 +38,14 @@ object DataMapper {
             isLocked = entity.isLocked,
             textContent = entity.textContent,
             mediaUri = entity.mediaUri,
-            repeatCount = entity.repeatCount
+            repeatCount = entity.repeatCount,
+            minUnreadCount = entity.minUnreadCount,
+            processOrder = entity.processOrder,
+            maxChatsToOpen = entity.maxChatsToOpen,
+            skipPinnedChats = entity.skipPinnedChats,
+            skipMutedChats = entity.skipMutedChats,
+            autoScroll = entity.autoScroll,
+            stopAtEnd = entity.stopAtEnd
         )
     }
 
@@ -71,7 +78,14 @@ object DataMapper {
             isLocked = model.isLocked,
             textContent = model.textContent,
             mediaUri = model.mediaUri,
-            repeatCount = model.repeatCount
+            repeatCount = model.repeatCount,
+            minUnreadCount = model.minUnreadCount,
+            processOrder = model.processOrder,
+            maxChatsToOpen = model.maxChatsToOpen,
+            skipPinnedChats = model.skipPinnedChats,
+            skipMutedChats = model.skipMutedChats,
+            autoScroll = model.autoScroll,
+            stopAtEnd = model.stopAtEnd
         )
     }
 }

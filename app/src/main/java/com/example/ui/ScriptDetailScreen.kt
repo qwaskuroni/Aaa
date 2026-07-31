@@ -276,6 +276,23 @@ fun ScriptDetailScreen(
                             val newOrder = targets.size + 1
                             targets = targets + ClickTarget(
                                 order = newOrder,
+                                type = TargetType.OPEN_UNREAD_CHATS,
+                                delayMs = 500L,
+                                label = "Open Unread Chats #$newOrder"
+                            )
+                        },
+                        modifier = Modifier.testTag("btn_add_unread_chats_target")
+                    ) {
+                        Text(text = "📩 + Unread Chats", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val newOrder = targets.size + 1
+                            targets = targets + ClickTarget(
+                                order = newOrder,
                                 type = TargetType.SINGLE_TAP,
                                 delayMs = 500L,
                                 label = "Tap #$newOrder"
@@ -509,6 +526,56 @@ fun TargetDetailCard(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "✓ Selected video will play in a small window when this step executes.",
+                    fontSize = 10.sp,
+                    color = Color(0xFF10B981)
+                )
+            }
+
+            if (target.type == TargetType.OPEN_UNREAD_CHATS) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "📩 Open Unread Chats Settings",
+                    fontSize = 12.sp,
+                    color = Color(0xFF10B981),
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = target.minUnreadCount.toString(),
+                        onValueChange = {
+                            val count = it.toIntOrNull() ?: 1
+                            onUpdate(target.copy(minUnreadCount = count))
+                        },
+                        label = { Text("Min Badge Count", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = target.maxChatsToOpen.toString(),
+                        onValueChange = {
+                            val max = it.toIntOrNull() ?: 0
+                            onUpdate(target.copy(maxChatsToOpen = max))
+                        },
+                        label = { Text("Max Chats (0=All)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "✓ Auto scans unread message badges, opens chat, executes macro steps & continues.",
                     fontSize = 10.sp,
                     color = Color(0xFF10B981)
                 )

@@ -121,6 +121,111 @@
             android:textSize="10sp" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/layoutUnreadChatsInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="📩 Open Unread Chats Settings:"
+            android:textColor="#10B981"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Minimum Unread Count:"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etMinUnreadCount"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#0F172A"
+            android:inputType="number"
+            android:padding="6dp"
+            android:text="1"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Process Order:"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <Spinner
+            android:id="@+id/spinnerProcessOrder"
+            android:layout_width="match_parent"
+            android:layout_height="38dp"
+            android:background="#334155"
+            android:padding="6dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Maximum Chats to Open (0 = All):"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etMaxChatsToOpen"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#0F172A"
+            android:inputType="number"
+            android:padding="6dp"
+            android:text="0"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <CheckBox
+            android:id="@+id/cbSkipPinned"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="Skip pinned chats"
+            android:textColor="#CBD5E1"
+            android:textSize="11sp" />
+
+        <CheckBox
+            android:id="@+id/cbSkipMuted"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Skip muted chats"
+            android:textColor="#CBD5E1"
+            android:textSize="11sp" />
+
+        <CheckBox
+            android:id="@+id/cbAutoScroll"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Auto scroll to continue scanning"
+            android:textColor="#CBD5E1"
+            android:textSize="11sp" />
+
+        <CheckBox
+            android:id="@+id/cbStopAtEnd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Stop when end of list is reached"
+            android:textColor="#CBD5E1"
+            android:textSize="11sp" />
+    </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
