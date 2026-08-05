@@ -19,16 +19,19 @@ object XlsSmartReplyEngine {
 
     private const val TAG = "XlsSmartReplyEngine"
 
-    // Built-in Bengali & English Synonym Dictionary
+    // Built-in Bengali & English Synonym Dictionary + AI Intent Mapping
     private val synonymGroups = listOf(
-        setOf("নাম্বার", "নম্বর", "নাম্বারটা", "নম্বরটা", "number", "num", "no", "মোবাইল"),
-        setOf("বিকাশ", "bkash", "bk"),
-        setOf("নগদ", "nagad", "ngd"),
-        setOf("রকেট", "rocket", "rkt"),
-        setOf("টাকা", "পেমেন্ট", "payment", "pay", "টাকা পাঠাবো", "পে", "মূল্য", "দাম", "price", "cost", "টাকা কত"),
-        setOf("কত", "কতো", "দাম কত", "দাম কতো", "price", "how much"),
+        setOf("নাম্বার", "নম্বর", "নাম্বারটা", "নম্বরটা", "number", "num", "no", "মোবাইল", "PAYMENT_NUMBER"),
+        setOf("বিকাশ", "bkash", "bk", "PAYMENT_NUMBER"),
+        setOf("নগদ", "nagad", "ngd", "PAYMENT_NUMBER"),
+        setOf("রকেট", "rocket", "rkt", "PAYMENT_NUMBER"),
+        setOf("টাকা", "পেমেন্ট", "payment", "pay", "টাকা পাঠাবো", "পে", "মূল্য", "দাম", "price", "cost", "টাকা কত", "PAYMENT_NUMBER", "PRICE"),
+        setOf("কত", "কতো", "দাম কত", "দাম কতো", "price", "how much", "PRICE"),
         setOf("দাও", "দেন", "দিন", "দেবেন", "দিবেন", "পাঠাও", "পাঠান", "give", "send"),
-        setOf("হাই", "হ্যালো", "হেলো", "hi", "hello", "hey", "assalamu alaikum", "সালাম", "আসসালামু আলাইকুম")
+        setOf("হাই", "হ্যালো", "হেলো", "hi", "hello", "hey", "assalamu alaikum", "সালাম", "আসসালামু আলাইকুম", "GREETING"),
+        setOf("লোকেশন", "ঠিকানা", "ঠিকানাটা", "address", "location", "place", "shop", "শপ", "LOCATION"),
+        setOf("কল", "ভিডিও কল", "video call", "imo call", "call", "VIDEO_CALL"),
+        setOf("নাম", "আপনার নাম", "name", "who are you", "NAME")
     )
 
     suspend fun processAutoReply(
@@ -39,7 +42,10 @@ object XlsSmartReplyEngine {
         matchThreshold: Float = 0.3f,
         fallbackReply: String = ""
     ): String {
-        val inputMessage = scannedMessage.ifEmpty { MacroContext.scannedMessage }
+        var inputMessage = scannedMessage.ifEmpty { MacroContext.scannedMessage }
+        if (inputMessage.isBlank()) {
+            inputMessage = MacroContext.getVariable("RAW_SCANNED_MESSAGE")
+        }
         if (inputMessage.isBlank()) {
             Log.d(TAG, "Scanned message is empty. No auto reply generated.")
             MacroContext.autoReply = fallbackReply
@@ -53,7 +59,15 @@ object XlsSmartReplyEngine {
             return fallbackReply
         }
 
-        val bestMatch = findBestMatchingReply(inputMessage, rules, matchThreshold)
+        var bestMatch = findBestMatchingReply(inputMessage, rules, matchThreshold)
+        if (bestMatch == null) {
+            val rawMsg = MacroContext.getVariable("RAW_SCANNED_MESSAGE")
+            if (rawMsg.isNotBlank() && rawMsg != inputMessage) {
+                Log.d(TAG, "No match for intent '$inputMessage', trying raw message '$rawMsg'...")
+                bestMatch = findBestMatchingReply(rawMsg, rules, matchThreshold)
+            }
+        }
+
         val selectedReply = bestMatch ?: fallbackReply
 
         Log.d(TAG, "Scanned: '$inputMessage' -> Selected Reply: '$selectedReply'")
@@ -153,7 +167,7 @@ object XlsSmartReplyEngine {
         return normalizedText.split(" ").filter { it.length > 1 }.toSet()
     }
 
-    private fun loadRules(
+    fun loadRules(
         context: Context,
         filePathOrUri: String,
         inlineRulesContent: String
@@ -163,17 +177,25 @@ object XlsSmartReplyEngine {
         // 1. Attempt parsing from Excel / File URI if provided
         if (filePathOrUri.isNotEmpty()) {
             try {
-                val uri = Uri.parse(filePathOrUri)
-                val inputStream = context.contentResolver.openInputStream(uri)
+                val inputStream: InputStream? = if (filePathOrUri.startsWith("/")) {
+                    val file = java.io.File(filePathOrUri)
+                    if (file.exists()) file.inputStream() else null
+                } else {
+                    val uri = Uri.parse(filePathOrUri)
+                    context.contentResolver.openInputStream(uri)
+                }
+
                 if (inputStream != null) {
-                    if (filePathOrUri.endsWith(".xlsx", ignoreCase = true) || filePathOrUri.contains("spreadsheet")) {
-                        rulesList.addAll(parseXlsxInputStream(inputStream))
-                    } else {
-                        rulesList.addAll(parseCsvInputStream(inputStream))
+                    inputStream.use { stream ->
+                        if (filePathOrUri.endsWith(".xlsx", ignoreCase = true) || filePathOrUri.contains("spreadsheet") || filePathOrUri.contains("excel")) {
+                            rulesList.addAll(parseXlsxInputStream(stream))
+                        } else {
+                            rulesList.addAll(parseCsvInputStream(stream))
+                        }
                     }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Error opening file URI: $filePathOrUri", e)
+                Log.e(TAG, "Error opening file URI or path: $filePathOrUri", e)
             }
         }
 

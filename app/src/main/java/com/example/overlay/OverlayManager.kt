@@ -424,6 +424,13 @@ class OverlayManager(
         dialogBinding.etMatchThreshold.setText(target.matchThreshold.toString())
         dialogBinding.etFallbackReply.setText(target.fallbackReply)
 
+        // Populate Voice To Text Dialog Controls
+        dialogBinding.etVoiceToTextDelayBeforeMs.setText(target.voiceToTextDelayBeforeMs.toString())
+        dialogBinding.etVoiceToTextWaitAfterMs.setText(target.voiceToTextWaitAfterMs.toString())
+
+        // Populate AI Intent Scanner Dialog Controls
+        dialogBinding.etAiIntentApiKey.setText(target.aiIntentApiKey)
+
         val orderOptions = listOf("Top → Bottom", "Bottom → Top")
         val orderAdapter = android.widget.ArrayAdapter(
             context,
@@ -457,16 +464,42 @@ class OverlayManager(
             dialogBinding.layoutUnreadChatsInput.visibility = if (type == TargetType.OPEN_UNREAD_CHATS) android.view.View.VISIBLE else android.view.View.GONE
             dialogBinding.layoutSmartScannerInput.visibility = if (type == TargetType.SMART_MESSAGE_SCANNER) android.view.View.VISIBLE else android.view.View.GONE
             dialogBinding.layoutXlsReplyInput.visibility = if (type == TargetType.XLS_SMART_REPLY) android.view.View.VISIBLE else android.view.View.GONE
+            dialogBinding.layoutVoiceToTextInput.visibility = if (type == TargetType.VOICE_TO_TEXT) android.view.View.VISIBLE else android.view.View.GONE
+            dialogBinding.layoutAiIntentScannerInput.visibility = if (type == TargetType.AI_INTENT_SCANNER) android.view.View.VISIBLE else android.view.View.GONE
         }
 
         updateFieldsVisibility(target.type)
 
-        dialogBinding.spinnerActionType.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
-                val selectedType = actionTypes[position]
-                updateFieldsVisibility(selectedType)
+        // Custom touch interceptor to launch clean, stable modal selection dialog
+        var isPickerOpen = false
+        dialogBinding.spinnerActionType.setOnTouchListener { _, event ->
+            if (event.action == android.view.MotionEvent.ACTION_UP && !isPickerOpen) {
+                isPickerOpen = true
+                val currentSelIndex = dialogBinding.spinnerActionType.selectedItemPosition.coerceAtLeast(0)
+                val pickerDialog = android.app.AlertDialog.Builder(context, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle("Select Action Type")
+                    .setSingleChoiceItems(
+                        actionTypes.map { it.displayName }.toTypedArray(),
+                        currentSelIndex
+                    ) { dlg, which ->
+                        dialogBinding.spinnerActionType.setSelection(which)
+                        val selectedType = actionTypes[which]
+                        updateFieldsVisibility(selectedType)
+                        dlg.dismiss()
+                    }
+                    .setNegativeButton("Cancel", null)
+                    .setOnDismissListener { isPickerOpen = false }
+                    .create()
+
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    pickerDialog.window?.setType(WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY)
+                } else {
+                    @Suppress("DEPRECATION")
+                    pickerDialog.window?.setType(WindowManager.LayoutParams.TYPE_PHONE)
+                }
+                pickerDialog.show()
             }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            true // Consume touch to prevent default popup window bleed-through
         }
 
         // Auto-save text content as typed
@@ -506,6 +539,26 @@ class OverlayManager(
                 }
             }
             com.example.ui.VideoPickerActivity.launch(context, target.order)
+        }
+
+        dialogBinding.btnPickExcelFile.setOnClickListener {
+            com.example.ui.ExcelPickerActivity.onExcelPickedListener = { targetOrder, filePathOrUri, parsedRules ->
+                if (targetOrder == target.order) {
+                    dialogBinding.etExcelFilePath.setText(filePathOrUri)
+                    if (parsedRules.isNotBlank()) {
+                        dialogBinding.etExcelRulesContent.setText(parsedRules)
+                    }
+                    val selType = actionTypes.getOrNull(dialogBinding.spinnerActionType.selectedItemPosition) ?: target.type
+                    val updated = target.copy(
+                        type = selType,
+                        excelFilePath = filePathOrUri,
+                        excelRulesContent = if (parsedRules.isNotBlank()) parsedRules else dialogBinding.etExcelRulesContent.text.toString()
+                    )
+                    updateTargetInScript(updated)
+                    targetViews.find { it.clickTarget.order == target.order }?.updateTargetData(updated)
+                }
+            }
+            com.example.ui.ExcelPickerActivity.launch(context, target.order)
         }
 
         dialogBinding.btnDecreaseSize.setOnClickListener {
@@ -573,6 +626,10 @@ class OverlayManager(
             val matchThreshold = dialogBinding.etMatchThreshold.text.toString().toFloatOrNull() ?: 0.3f
             val fallbackReply = dialogBinding.etFallbackReply.text.toString()
 
+            val v2tDelayBefore = dialogBinding.etVoiceToTextDelayBeforeMs.text.toString().toLongOrNull() ?: 2000L
+            val v2tWaitAfter = dialogBinding.etVoiceToTextWaitAfterMs.text.toString().toLongOrNull() ?: 2000L
+            val aiIntentApiKey = dialogBinding.etAiIntentApiKey.text.toString()
+
             val updatedTarget = target.copy(
                 type = selectedType,
                 delayMs = delayMs,
@@ -591,6 +648,9 @@ class OverlayManager(
                 excelRulesContent = excelRulesContent,
                 matchThreshold = matchThreshold,
                 fallbackReply = fallbackReply,
+                voiceToTextDelayBeforeMs = v2tDelayBefore,
+                voiceToTextWaitAfterMs = v2tWaitAfter,
+                aiIntentApiKey = aiIntentApiKey,
                 label = "${selectedType.displayName} #${target.order}"
             )
 

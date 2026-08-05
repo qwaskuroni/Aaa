@@ -10,5 +10,7 @@ data class GlobalSettings(
     val randomOffsetMaxPx: Int = 10,
     val soundFeedbackEnabled: Boolean = false,
     val vibrationFeedbackEnabled: Boolean = true,
-    val isDarkMode: Boolean = true
+    val isDarkMode: Boolean = true,
+    val openAiApiKey: String = "",
+    val geminiApiKey: String = ""
 )

@@ -104,7 +104,34 @@ object GestureExecutor {
                     matchThreshold = target.matchThreshold,
                     fallbackReply = target.fallbackReply
                 )
+                if (reply.isNotBlank()) {
+                    if (startX > 0f || startY > 0f) {
+                        service.performTap(startX, startY, 50L)
+                        kotlinx.coroutines.delay(200L)
+                    }
+                    val injected = service.inputText(reply)
+                    if (!injected) {
+                        if (startX > 0f || startY > 0f) {
+                            service.performTap(startX, startY, 50L)
+                            kotlinx.coroutines.delay(200L)
+                        }
+                        service.inputText(reply)
+                    }
+                }
                 reply.isNotEmpty()
+            }
+            TargetType.VOICE_TO_TEXT -> {
+                com.example.automation.VoiceToTextEngine.executeVoiceToText(
+                    service = service,
+                    delayBeforeClickMs = target.voiceToTextDelayBeforeMs,
+                    waitAfterClickMs = target.voiceToTextWaitAfterMs
+                )
+            }
+            TargetType.AI_INTENT_SCANNER -> {
+                com.example.automation.AiIntentScannerEngine.scanAndClassifyIntent(
+                    service = service,
+                    customApiKey = target.aiIntentApiKey
+                )
             }
             TargetType.SYSTEM_BACK -> {
                 service.performBack()

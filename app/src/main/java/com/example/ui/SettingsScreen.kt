@@ -14,6 +14,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
@@ -25,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.GlobalSettings
@@ -49,6 +52,72 @@ fun SettingsScreen(
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onBackground
         )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // AI Engine API Key Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "🤖 AI Engine & API Key Setup",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFF06B6D4)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Used for AI Intent Scanner & Smart Message Understanding to match customer questions with XLS reply rules.",
+                    fontSize = 12.sp,
+                    color = Color(0xFF94A3B8)
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = settings.openAiApiKey,
+                    onValueChange = { onUpdateSettings(settings.copy(openAiApiKey = it)) },
+                    label = { Text("OpenAI API Key (sk-...)", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("sk-proj-...", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth().testTag("input_openai_api_key"),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF06B6D4),
+                        unfocusedBorderColor = Color(0xFF334155)
+                    ),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = settings.geminiApiKey,
+                    onValueChange = { onUpdateSettings(settings.copy(geminiApiKey = it)) },
+                    label = { Text("Gemini API Key (Optional Alternative)", fontSize = 11.sp, color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("AIzaSy...", fontSize = 11.sp, color = Color(0xFF64748B)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth().testTag("input_gemini_api_key"),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = Color(0xFF06B6D4),
+                        unfocusedBorderColor = Color(0xFF334155)
+                    ),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "✓ Note: You can also set specific API Keys inside individual 'AI Intent Scanner' target cards in your Script Editor or Master Mode Setup.",
+                    fontSize = 11.sp,
+                    color = Color(0xFF10B981)
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

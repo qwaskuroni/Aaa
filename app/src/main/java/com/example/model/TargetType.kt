@@ -12,6 +12,8 @@ enum class TargetType(val displayName: String) {
     OPEN_UNREAD_CHATS("Open Unread Chats"),
     SMART_MESSAGE_SCANNER("Smart Message Scanner"),
     XLS_SMART_REPLY("XLS Smart Reply"),
+    VOICE_TO_TEXT("Voice To Text"),
+    AI_INTENT_SCANNER("AI Intent Scanner"),
     SYSTEM_BACK("Back"),
     SYSTEM_HOME("Home"),
     SYSTEM_RECENTS("Recent Apps")

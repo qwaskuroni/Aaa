@@ -43,6 +43,9 @@ object ScriptJsonUtils {
             targetObj.put("excelRulesContent", target.excelRulesContent)
             targetObj.put("matchThreshold", target.matchThreshold.toDouble())
             targetObj.put("fallbackReply", target.fallbackReply)
+            targetObj.put("voiceToTextDelayBeforeMs", target.voiceToTextDelayBeforeMs)
+            targetObj.put("voiceToTextWaitAfterMs", target.voiceToTextWaitAfterMs)
+            targetObj.put("aiIntentApiKey", target.aiIntentApiKey)
             targetsArray.put(targetObj)
         }
 
@@ -97,7 +100,10 @@ object ScriptJsonUtils {
                             excelFilePath = obj.optString("excelFilePath", ""),
                             excelRulesContent = obj.optString("excelRulesContent", ""),
                             matchThreshold = obj.optDouble("matchThreshold", 0.3).toFloat(),
-                            fallbackReply = obj.optString("fallbackReply", "")
+                            fallbackReply = obj.optString("fallbackReply", ""),
+                            voiceToTextDelayBeforeMs = obj.optLong("voiceToTextDelayBeforeMs", 2000L),
+                            voiceToTextWaitAfterMs = obj.optLong("voiceToTextWaitAfterMs", 2000L),
+                            aiIntentApiKey = obj.optString("aiIntentApiKey", "")
                         )
                     )
                 }

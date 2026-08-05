@@ -378,6 +378,114 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/layoutVoiceToTextInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🎙️ Voice To Text Settings:"
+            android:textColor="#F59E0B"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="✓ Triggers existing 'A' transcribe button on detected voice messages."
+            android:textColor="#CBD5E1"
+            android:textSize="11sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Delay Before Click (ms):"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etVoiceToTextDelayBeforeMs"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#0F172A"
+            android:inputType="number"
+            android:padding="6dp"
+            android:text="2000"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Wait After Click (ms):"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etVoiceToTextWaitAfterMs"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#0F172A"
+            android:inputType="number"
+            android:padding="6dp"
+            android:text="2000"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layoutAiIntentScannerInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🧠 AI Intent Scanner Settings:"
+            android:textColor="#3B82F6"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="✓ Analyzes customer text/voice-transcription and returns Intent ID (e.g., PAYMENT_NUMBER, LOCATION, PRICE, UNKNOWN)."
+            android:textColor="#CBD5E1"
+            android:textSize="11sp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="OpenAI API Key (Optional Override):"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etAiIntentApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#0F172A"
+            android:hint="Leave empty to use Master Mode setup key"
+            android:textColorHint="#64748B"
+            android:inputType="textPassword"
+            android:padding="6dp"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+    </LinearLayout>
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

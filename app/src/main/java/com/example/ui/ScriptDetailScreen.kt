@@ -2,7 +2,10 @@ package com.example.ui
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,20 +14,28 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.SmartButton
 import androidx.compose.material.icons.filled.Swipe
 import androidx.compose.material.icons.filled.TouchApp
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,6 +46,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,10 +54,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.model.ClickTarget
@@ -67,6 +81,25 @@ fun ScriptDetailScreen(
         mutableStateOf(initialScript?.targets ?: listOf(
             ClickTarget(order = 1, type = TargetType.SINGLE_TAP, delayMs = 500L)
         ))
+    }
+
+    var showAddActionDialog by remember { mutableStateOf(false) }
+
+    if (showAddActionDialog) {
+        ActionTypePickerDialog(
+            currentType = null,
+            onTypeSelected = { selectedType ->
+                val newOrder = targets.size + 1
+                targets = targets + ClickTarget(
+                    order = newOrder,
+                    type = selectedType,
+                    delayMs = 500L,
+                    label = "${selectedType.displayName} #$newOrder"
+                )
+                showAddActionDialog = false
+            },
+            onDismiss = { showAddActionDialog = false }
+        )
     }
 
     Box(
@@ -270,7 +303,22 @@ fun ScriptDetailScreen(
                     color = Color.White
                 )
 
-                Row {
+                Row(
+                    modifier = Modifier.horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedButton(
+                        onClick = { showAddActionDialog = true },
+                        modifier = Modifier.testTag("btn_add_action_target"),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color(0xFF00E5FF))
+                    ) {
+                        Icon(imageVector = Icons.Default.Add, contentDescription = null)
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(text = "+ Action Type", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
                     OutlinedButton(
                         onClick = {
                             val newOrder = targets.size + 1
@@ -310,14 +358,14 @@ fun ScriptDetailScreen(
                             val newOrder = targets.size + 1
                             targets = targets + ClickTarget(
                                 order = newOrder,
-                                type = TargetType.OPEN_UNREAD_CHATS,
+                                type = TargetType.VOICE_TO_TEXT,
                                 delayMs = 500L,
-                                label = "Open Unread Chats #$newOrder"
+                                label = "Voice To Text #$newOrder"
                             )
                         },
-                        modifier = Modifier.testTag("btn_add_unread_chats_target")
+                        modifier = Modifier.testTag("btn_add_voice_to_text_target")
                     ) {
-                        Text(text = "📩 + Unread Chats", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
+                        Text(text = "🎙️ + Voice To Text", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFFF59E0B))
                     }
 
                     Spacer(modifier = Modifier.width(6.dp))
@@ -327,16 +375,31 @@ fun ScriptDetailScreen(
                             val newOrder = targets.size + 1
                             targets = targets + ClickTarget(
                                 order = newOrder,
-                                type = TargetType.SINGLE_TAP,
+                                type = TargetType.AI_INTENT_SCANNER,
                                 delayMs = 500L,
-                                label = "Tap #$newOrder"
+                                label = "AI Intent Scanner #$newOrder"
                             )
                         },
-                        modifier = Modifier.testTag("btn_add_action_target")
+                        modifier = Modifier.testTag("btn_add_ai_intent_scanner_target")
                     ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(text = "+ Action", fontSize = 12.sp)
+                        Text(text = "🧠 + AI Intent Scanner", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF06B6D4))
+                    }
+
+                    Spacer(modifier = Modifier.width(6.dp))
+
+                    OutlinedButton(
+                        onClick = {
+                            val newOrder = targets.size + 1
+                            targets = targets + ClickTarget(
+                                order = newOrder,
+                                type = TargetType.OPEN_UNREAD_CHATS,
+                                delayMs = 500L,
+                                label = "Open Unread Chats #$newOrder"
+                            )
+                        },
+                        modifier = Modifier.testTag("btn_add_unread_chats_target")
+                    ) {
+                        Text(text = "📩 + Unread Chats", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Color(0xFF10B981))
                     }
 
                     Spacer(modifier = Modifier.width(6.dp))
@@ -407,12 +470,134 @@ fun ScriptDetailScreen(
 }
 
 @Composable
+fun ActionTypePickerDialog(
+    currentType: TargetType? = null,
+    onTypeSelected: (TargetType) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    imageVector = Icons.Default.SmartButton,
+                    contentDescription = null,
+                    tint = Color(0xFF38BDF8)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Select Action Type",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 400.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                TargetType.values().forEach { typeOption ->
+                    val isSelected = typeOption == currentType
+                    val optionColor = when (typeOption) {
+                        TargetType.SINGLE_TAP -> Color(0xFF00E5FF)
+                        TargetType.DOUBLE_TAP -> Color(0xFF38BDF8)
+                        TargetType.LONG_PRESS -> Color(0xFF818CF8)
+                        TargetType.SWIPE -> Color(0xFFF59E0B)
+                        TargetType.WAIT -> Color(0xFF94A3B8)
+                        TargetType.TEXT_INPUT -> Color(0xFFA855F7)
+                        TargetType.CLIPBOARD_PASTE -> Color(0xFF10B981)
+                        TargetType.SMART_MESSAGE_SCANNER -> Color(0xFF3B82F6)
+                        TargetType.XLS_SMART_REPLY -> Color(0xFF8B5CF6)
+                        TargetType.VOICE_TO_TEXT -> Color(0xFFF59E0B)
+                        TargetType.AI_INTENT_SCANNER -> Color(0xFF06B6D4)
+                        TargetType.OPEN_UNREAD_CHATS -> Color(0xFF10B981)
+                        else -> Color(0xFFEC4899)
+                    }
+
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onTypeSelected(typeOption)
+                            },
+                        shape = RoundedCornerShape(10.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isSelected) optionColor.copy(alpha = 0.2f) else Color(0xFF0F172A)
+                        ),
+                        border = BorderStroke(
+                            width = if (isSelected) 2.dp else 1.dp,
+                            color = if (isSelected) optionColor else Color(0xFF334155)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(12.dp)
+                                        .clip(CircleShape)
+                                        .background(optionColor)
+                                )
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(
+                                    text = typeOption.displayName,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color.White
+                                )
+                            }
+                            if (isSelected) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Selected",
+                                    tint = optionColor,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {},
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel", color = Color(0xFF94A3B8))
+            }
+        },
+        containerColor = Color(0xFF1E293B),
+        shape = RoundedCornerShape(16.dp)
+    )
+}
+
+@Composable
 fun TargetDetailCard(
     target: ClickTarget,
     onUpdate: (ClickTarget) -> Unit,
     onDelete: () -> Unit
 ) {
-    var dropdownExpanded by remember { mutableStateOf(false) }
+    var showPickerModal by remember { mutableStateOf(false) }
+
+    if (showPickerModal) {
+        ActionTypePickerDialog(
+            currentType = target.type,
+            onTypeSelected = { selectedType ->
+                onUpdate(target.copy(type = selectedType, label = "${selectedType.displayName} #${target.order}"))
+                showPickerModal = false
+            },
+            onDismiss = { showPickerModal = false }
+        )
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -442,30 +627,12 @@ fun TargetDetailCard(
                 )
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box {
-                        OutlinedButton(
-                            onClick = { dropdownExpanded = true },
-                            modifier = Modifier.height(32.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
-                        ) {
-                            Text(text = target.type.displayName, fontSize = 11.sp)
-                        }
-
-                        androidx.compose.material3.DropdownMenu(
-                            expanded = dropdownExpanded,
-                            onDismissRequest = { dropdownExpanded = false },
-                            modifier = Modifier.background(Color(0xFF334155))
-                        ) {
-                            TargetType.values().forEach { typeOption ->
-                                androidx.compose.material3.DropdownMenuItem(
-                                    text = { Text(text = typeOption.displayName, color = Color.White) },
-                                    onClick = {
-                                        onUpdate(target.copy(type = typeOption, label = "${typeOption.displayName} #${target.order}"))
-                                        dropdownExpanded = false
-                                    }
-                                )
-                            }
-                        }
+                    OutlinedButton(
+                        onClick = { showPickerModal = true },
+                        modifier = Modifier.height(32.dp),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White)
+                    ) {
+                        Text(text = target.type.displayName, fontSize = 11.sp)
                     }
 
                     Spacer(modifier = Modifier.width(6.dp))
@@ -595,7 +762,34 @@ fun TargetDetailCard(
                         } catch (e: Exception) {
                             // ignore
                         }
-                        onUpdate(target.copy(excelFilePath = uri.toString()))
+                        var savedPathOrUri = uri.toString()
+                        var extractedRulesText = ""
+                        try {
+                            val extension = if (uri.toString().endsWith(".csv", ignoreCase = true)) "csv" else "xlsx"
+                            val destFile = java.io.File(context.filesDir, "target_excel_${target.order}.$extension")
+                            context.contentResolver.openInputStream(uri)?.use { inputStream ->
+                                java.io.FileOutputStream(destFile).use { outputStream ->
+                                    inputStream.copyTo(outputStream)
+                                }
+                            }
+                            if (destFile.exists() && destFile.length() > 0) {
+                                savedPathOrUri = destFile.absolutePath
+                            }
+                            val rules = com.example.automation.XlsSmartReplyEngine.loadRules(context, savedPathOrUri, "")
+                            if (rules.isNotEmpty()) {
+                                extractedRulesText = rules.joinToString("\n") { row ->
+                                    "${row.keywords.joinToString(", ")} : ${row.reply}"
+                                }
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                        onUpdate(
+                            target.copy(
+                                excelFilePath = savedPathOrUri,
+                                excelRulesContent = if (extractedRulesText.isNotBlank()) extractedRulesText else target.excelRulesContent
+                            )
+                        )
                     }
                 }
 
@@ -639,6 +833,86 @@ fun TargetDetailCard(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "✓ Matches {{SCANNED_MESSAGE}} with keywords & stores reply in variable: {{AUTO_REPLY}}",
+                    fontSize = 10.sp,
+                    color = Color(0xFF10B981)
+                )
+            }
+
+            if (target.type == TargetType.VOICE_TO_TEXT) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "🎙️ Voice To Text Settings",
+                    fontSize = 12.sp,
+                    color = Color(0xFFF59E0B),
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = target.voiceToTextDelayBeforeMs.toString(),
+                        onValueChange = {
+                            val delay = it.toLongOrNull() ?: 2000L
+                            onUpdate(target.copy(voiceToTextDelayBeforeMs = delay))
+                        },
+                        label = { Text("Delay Before Click (ms)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = target.voiceToTextWaitAfterMs.toString(),
+                        onValueChange = {
+                            val wait = it.toLongOrNull() ?: 2000L
+                            onUpdate(target.copy(voiceToTextWaitAfterMs = wait))
+                        },
+                        label = { Text("Wait After Click (ms)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+                }
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "✓ Automatically converts detected voice message to text using existing 'A' button.",
+                    fontSize = 10.sp,
+                    color = Color(0xFF10B981)
+                )
+            }
+
+            if (target.type == TargetType.AI_INTENT_SCANNER) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "🧠 AI Intent Scanner Settings",
+                    fontSize = 12.sp,
+                    color = Color(0xFF06B6D4),
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                OutlinedTextField(
+                    value = target.aiIntentApiKey,
+                    onValueChange = { onUpdate(target.copy(aiIntentApiKey = it)) },
+                    label = { Text("OpenAI API Key (Optional Override)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                    placeholder = { Text("Leave empty to use Master Mode setup key", fontSize = 10.sp, color = Color(0xFF64748B)) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    singleLine = true
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = "✓ Analyzes latest customer message (text/voice-transcription) and returns Intent ID (e.g. PAYMENT_NUMBER, LOCATION, PRICE, UNKNOWN).",
                     fontSize = 10.sp,
                     color = Color(0xFF10B981)
                 )

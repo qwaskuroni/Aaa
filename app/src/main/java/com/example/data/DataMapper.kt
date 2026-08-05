@@ -49,7 +49,10 @@ object DataMapper {
             excelFilePath = entity.excelFilePath,
             excelRulesContent = entity.excelRulesContent,
             matchThreshold = entity.matchThreshold,
-            fallbackReply = entity.fallbackReply
+            fallbackReply = entity.fallbackReply,
+            voiceToTextDelayBeforeMs = entity.voiceToTextDelayBeforeMs,
+            voiceToTextWaitAfterMs = entity.voiceToTextWaitAfterMs,
+            aiIntentApiKey = entity.aiIntentApiKey
         )
     }
 
@@ -93,7 +96,10 @@ object DataMapper {
             excelFilePath = model.excelFilePath,
             excelRulesContent = model.excelRulesContent,
             matchThreshold = model.matchThreshold,
-            fallbackReply = model.fallbackReply
+            fallbackReply = model.fallbackReply,
+            voiceToTextDelayBeforeMs = model.voiceToTextDelayBeforeMs,
+            voiceToTextWaitAfterMs = model.voiceToTextWaitAfterMs,
+            aiIntentApiKey = model.aiIntentApiKey
         )
     }
 }

@@ -115,6 +115,8 @@ class TargetOverlayView(
             TargetType.OPEN_UNREAD_CHATS -> Color.parseColor("#10B981")
             TargetType.SMART_MESSAGE_SCANNER -> Color.parseColor("#3B82F6")
             TargetType.XLS_SMART_REPLY -> Color.parseColor("#8B5CF6")
+            TargetType.VOICE_TO_TEXT -> Color.parseColor("#F59E0B")
+            TargetType.AI_INTENT_SCANNER -> Color.parseColor("#06B6D4")
             TargetType.SYSTEM_BACK,
             TargetType.SYSTEM_HOME,
             TargetType.SYSTEM_RECENTS -> Color.parseColor("#EC4899")

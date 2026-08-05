@@ -27,5 +27,8 @@ data class ClickTarget(
     val excelFilePath: String = "",
     val excelRulesContent: String = "",
     val matchThreshold: Float = 0.3f,
-    val fallbackReply: String = ""
+    val fallbackReply: String = "",
+    val voiceToTextDelayBeforeMs: Long = 2000L,
+    val voiceToTextWaitAfterMs: Long = 2000L,
+    val aiIntentApiKey: String = ""
 )

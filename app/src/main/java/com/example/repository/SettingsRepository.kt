@@ -24,7 +24,9 @@ class SettingsRepository(context: Context) {
             randomOffsetMaxPx = prefs.getInt("random_offset_max_px", 10),
             soundFeedbackEnabled = prefs.getBoolean("sound_feedback_enabled", false),
             vibrationFeedbackEnabled = prefs.getBoolean("vibration_feedback_enabled", true),
-            isDarkMode = prefs.getBoolean("is_dark_mode", true)
+            isDarkMode = prefs.getBoolean("is_dark_mode", true),
+            openAiApiKey = prefs.getString("openai_api_key", "") ?: "",
+            geminiApiKey = prefs.getString("gemini_api_key", "") ?: ""
         )
     }
 
@@ -40,6 +42,8 @@ class SettingsRepository(context: Context) {
             .putBoolean("sound_feedback_enabled", newSettings.soundFeedbackEnabled)
             .putBoolean("vibration_feedback_enabled", newSettings.vibrationFeedbackEnabled)
             .putBoolean("is_dark_mode", newSettings.isDarkMode)
+            .putString("openai_api_key", newSettings.openAiApiKey)
+            .putString("gemini_api_key", newSettings.geminiApiKey)
             .apply()
 
         _settings.value = newSettings
