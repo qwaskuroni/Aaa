@@ -427,6 +427,9 @@ class OverlayManager(
         // Populate Voice To Text Dialog Controls
         dialogBinding.etVoiceToTextDelayBeforeMs.setText(target.voiceToTextDelayBeforeMs.toString())
         dialogBinding.etVoiceToTextWaitAfterMs.setText(target.voiceToTextWaitAfterMs.toString())
+        dialogBinding.etVoiceToTextRetryCount.setText(target.voiceToTextRetryCount.toString())
+        dialogBinding.etVoiceToTextRetryIntervalMs.setText(target.voiceToTextRetryIntervalMs.toString())
+        dialogBinding.etVoiceToTextSearchTimeoutMs.setText(target.voiceToTextSearchTimeoutMs.toString())
 
         // Populate AI Intent Scanner Dialog Controls
         dialogBinding.etAiIntentApiKey.setText(target.aiIntentApiKey)
@@ -626,8 +629,11 @@ class OverlayManager(
             val matchThreshold = dialogBinding.etMatchThreshold.text.toString().toFloatOrNull() ?: 0.3f
             val fallbackReply = dialogBinding.etFallbackReply.text.toString()
 
-            val v2tDelayBefore = dialogBinding.etVoiceToTextDelayBeforeMs.text.toString().toLongOrNull() ?: 2000L
-            val v2tWaitAfter = dialogBinding.etVoiceToTextWaitAfterMs.text.toString().toLongOrNull() ?: 2000L
+            val v2tDelayBefore = dialogBinding.etVoiceToTextDelayBeforeMs.text.toString().toLongOrNull() ?: 1000L
+            val v2tWaitAfter = dialogBinding.etVoiceToTextWaitAfterMs.text.toString().toLongOrNull() ?: 1000L
+            val v2tRetryCount = dialogBinding.etVoiceToTextRetryCount.text.toString().toIntOrNull() ?: 5
+            val v2tRetryInterval = dialogBinding.etVoiceToTextRetryIntervalMs.text.toString().toLongOrNull() ?: 500L
+            val v2tSearchTimeout = dialogBinding.etVoiceToTextSearchTimeoutMs.text.toString().toLongOrNull() ?: 3000L
             val aiIntentApiKey = dialogBinding.etAiIntentApiKey.text.toString()
 
             val updatedTarget = target.copy(
@@ -650,6 +656,9 @@ class OverlayManager(
                 fallbackReply = fallbackReply,
                 voiceToTextDelayBeforeMs = v2tDelayBefore,
                 voiceToTextWaitAfterMs = v2tWaitAfter,
+                voiceToTextRetryCount = v2tRetryCount,
+                voiceToTextRetryIntervalMs = v2tRetryInterval,
+                voiceToTextSearchTimeoutMs = v2tSearchTimeout,
                 aiIntentApiKey = aiIntentApiKey,
                 label = "${selectedType.displayName} #${target.order}"
             )

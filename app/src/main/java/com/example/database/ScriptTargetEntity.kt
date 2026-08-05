@@ -45,7 +45,10 @@ data class ScriptTargetEntity(
     val excelRulesContent: String = "",
     val matchThreshold: Float = 0.3f,
     val fallbackReply: String = "",
-    val voiceToTextDelayBeforeMs: Long = 2000L,
-    val voiceToTextWaitAfterMs: Long = 2000L,
+    val voiceToTextDelayBeforeMs: Long = 1000L,
+    val voiceToTextWaitAfterMs: Long = 1000L,
+    val voiceToTextRetryCount: Int = 5,
+    val voiceToTextRetryIntervalMs: Long = 500L,
+    val voiceToTextSearchTimeoutMs: Long = 3000L,
     val aiIntentApiKey: String = ""
 )

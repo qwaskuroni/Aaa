@@ -52,6 +52,9 @@ object DataMapper {
             fallbackReply = entity.fallbackReply,
             voiceToTextDelayBeforeMs = entity.voiceToTextDelayBeforeMs,
             voiceToTextWaitAfterMs = entity.voiceToTextWaitAfterMs,
+            voiceToTextRetryCount = entity.voiceToTextRetryCount,
+            voiceToTextRetryIntervalMs = entity.voiceToTextRetryIntervalMs,
+            voiceToTextSearchTimeoutMs = entity.voiceToTextSearchTimeoutMs,
             aiIntentApiKey = entity.aiIntentApiKey
         )
     }
@@ -99,6 +102,9 @@ object DataMapper {
             fallbackReply = model.fallbackReply,
             voiceToTextDelayBeforeMs = model.voiceToTextDelayBeforeMs,
             voiceToTextWaitAfterMs = model.voiceToTextWaitAfterMs,
+            voiceToTextRetryCount = model.voiceToTextRetryCount,
+            voiceToTextRetryIntervalMs = model.voiceToTextRetryIntervalMs,
+            voiceToTextSearchTimeoutMs = model.voiceToTextSearchTimeoutMs,
             aiIntentApiKey = model.aiIntentApiKey
         )
     }

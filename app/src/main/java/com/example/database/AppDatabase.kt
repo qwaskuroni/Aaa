@@ -16,7 +16,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         ActionSequence::class,
         Settings::class
     ],
-    version = 9,
+    version = 10,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -53,6 +53,14 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_9_10 = object : Migration(9, 10) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE script_targets ADD COLUMN voiceToTextRetryCount INTEGER NOT NULL DEFAULT 5")
+                db.execSQL("ALTER TABLE script_targets ADD COLUMN voiceToTextRetryIntervalMs INTEGER NOT NULL DEFAULT 500")
+                db.execSQL("ALTER TABLE script_targets ADD COLUMN voiceToTextSearchTimeoutMs INTEGER NOT NULL DEFAULT 3000")
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -60,7 +68,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "auto_clicker_db"
                 )
-                .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+                .addMigrations(MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10)
                 .fallbackToDestructiveMigration(dropAllTables = true)
                 .fallbackToDestructiveMigrationOnDowngrade(dropAllTables = true)
                 .build()

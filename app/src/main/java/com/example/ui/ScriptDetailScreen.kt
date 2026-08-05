@@ -851,7 +851,7 @@ fun TargetDetailCard(
                     OutlinedTextField(
                         value = target.voiceToTextDelayBeforeMs.toString(),
                         onValueChange = {
-                            val delay = it.toLongOrNull() ?: 2000L
+                            val delay = it.toLongOrNull() ?: 1000L
                             onUpdate(target.copy(voiceToTextDelayBeforeMs = delay))
                         },
                         label = { Text("Delay Before Click (ms)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
@@ -867,7 +867,7 @@ fun TargetDetailCard(
                     OutlinedTextField(
                         value = target.voiceToTextWaitAfterMs.toString(),
                         onValueChange = {
-                            val wait = it.toLongOrNull() ?: 2000L
+                            val wait = it.toLongOrNull() ?: 1000L
                             onUpdate(target.copy(voiceToTextWaitAfterMs = wait))
                         },
                         label = { Text("Wait After Click (ms)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
@@ -880,9 +880,62 @@ fun TargetDetailCard(
                         singleLine = true
                     )
                 }
-                Spacer(modifier = Modifier.height(2.dp))
+
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedTextField(
+                        value = target.voiceToTextRetryCount.toString(),
+                        onValueChange = {
+                            val retries = it.toIntOrNull() ?: 5
+                            onUpdate(target.copy(voiceToTextRetryCount = retries))
+                        },
+                        label = { Text("Retry Count", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+
+                    OutlinedTextField(
+                        value = target.voiceToTextRetryIntervalMs.toString(),
+                        onValueChange = {
+                            val interval = it.toLongOrNull() ?: 500L
+                            onUpdate(target.copy(voiceToTextRetryIntervalMs = interval))
+                        },
+                        label = { Text("Retry Interval (ms)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White
+                        ),
+                        singleLine = true
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = target.voiceToTextSearchTimeoutMs.toString(),
+                    onValueChange = {
+                        val timeout = it.toLongOrNull() ?: 3000L
+                        onUpdate(target.copy(voiceToTextSearchTimeoutMs = timeout))
+                    },
+                        label = { Text("Search Timeout (ms)", fontSize = 10.sp, color = Color(0xFF94A3B8)) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White
+                    ),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "✓ Automatically converts detected voice message to text using existing 'A' button.",
+                    text = "✓ Automatically detects latest customer voice message & clicks its 'A' transcription button once.",
                     fontSize = 10.sp,
                     color = Color(0xFF10B981)
                 )

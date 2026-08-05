@@ -436,7 +436,87 @@
             android:background="#0F172A"
             android:inputType="number"
             android:padding="6dp"
-            android:text="2000"
+            android:text="1000"
+            android:textColor="#FFFFFF"
+            android:textSize="12sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Retry Count:"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etVoiceToTextRetryCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:background="#0F172A"
+                    android:inputType="number"
+                    android:padding="6dp"
+                    android:text="5"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="wrap_content" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Retry Interval (ms):"
+                    android:textColor="#94A3B8"
+                    android:textSize="11sp" />
+
+                <EditText
+                    android:id="@+id/etVoiceToTextRetryIntervalMs"
+                    android:layout_width="match_parent"
+                    android:layout_height="36dp"
+                    android:background="#0F172A"
+                    android:inputType="number"
+                    android:padding="6dp"
+                    android:text="500"
+                    android:textColor="#FFFFFF"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="Search Timeout (ms):"
+            android:textColor="#94A3B8"
+            android:textSize="11sp" />
+
+        <EditText
+            android:id="@+id/etVoiceToTextSearchTimeoutMs"
+            android:layout_width="match_parent"
+            android:layout_height="36dp"
+            android:background="#0F172A"
+            android:inputType="number"
+            android:padding="6dp"
+            android:text="3000"
             android:textColor="#FFFFFF"
             android:textSize="12sp" />
     </LinearLayout>

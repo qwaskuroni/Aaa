@@ -45,6 +45,9 @@ object ScriptJsonUtils {
             targetObj.put("fallbackReply", target.fallbackReply)
             targetObj.put("voiceToTextDelayBeforeMs", target.voiceToTextDelayBeforeMs)
             targetObj.put("voiceToTextWaitAfterMs", target.voiceToTextWaitAfterMs)
+            targetObj.put("voiceToTextRetryCount", target.voiceToTextRetryCount)
+            targetObj.put("voiceToTextRetryIntervalMs", target.voiceToTextRetryIntervalMs)
+            targetObj.put("voiceToTextSearchTimeoutMs", target.voiceToTextSearchTimeoutMs)
             targetObj.put("aiIntentApiKey", target.aiIntentApiKey)
             targetsArray.put(targetObj)
         }
@@ -101,8 +104,11 @@ object ScriptJsonUtils {
                             excelRulesContent = obj.optString("excelRulesContent", ""),
                             matchThreshold = obj.optDouble("matchThreshold", 0.3).toFloat(),
                             fallbackReply = obj.optString("fallbackReply", ""),
-                            voiceToTextDelayBeforeMs = obj.optLong("voiceToTextDelayBeforeMs", 2000L),
-                            voiceToTextWaitAfterMs = obj.optLong("voiceToTextWaitAfterMs", 2000L),
+                            voiceToTextDelayBeforeMs = obj.optLong("voiceToTextDelayBeforeMs", 1000L),
+                            voiceToTextWaitAfterMs = obj.optLong("voiceToTextWaitAfterMs", 1000L),
+                            voiceToTextRetryCount = obj.optInt("voiceToTextRetryCount", 5),
+                            voiceToTextRetryIntervalMs = obj.optLong("voiceToTextRetryIntervalMs", 500L),
+                            voiceToTextSearchTimeoutMs = obj.optLong("voiceToTextSearchTimeoutMs", 3000L),
                             aiIntentApiKey = obj.optString("aiIntentApiKey", "")
                         )
                     )

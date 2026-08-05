@@ -124,7 +124,10 @@ object GestureExecutor {
                 com.example.automation.VoiceToTextEngine.executeVoiceToText(
                     service = service,
                     delayBeforeClickMs = target.voiceToTextDelayBeforeMs,
-                    waitAfterClickMs = target.voiceToTextWaitAfterMs
+                    waitAfterClickMs = target.voiceToTextWaitAfterMs,
+                    retryCount = target.voiceToTextRetryCount,
+                    retryIntervalMs = target.voiceToTextRetryIntervalMs,
+                    searchTimeoutMs = target.voiceToTextSearchTimeoutMs
                 )
             }
             TargetType.AI_INTENT_SCANNER -> {
