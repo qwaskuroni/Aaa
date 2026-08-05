@@ -12,8 +12,10 @@ object VoiceToTextEngine {
     private const val TAG = "VoiceToTextEngine"
     private const val VOICE_TRANSCRIBE_NOT_FOUND = "VOICE_TRANSCRIBE_NOT_FOUND"
 
-    // Regex to match duration formats like "0:05", "00:15", "1:30"
+    // Regex to match audio duration formats like "0:05", "00:15", "1:30"
     private val DURATION_REGEX = Pattern.compile("\\b\\d{1,2}:\\d{2}\\b")
+    // Regex to match timestamps like "10:40 AM", "10:40", "22:15"
+    private val TIMESTAMP_REGEX = Pattern.compile("\\b\\d{1,2}:\\d{2}\\s*(AM|PM|am|pm)?\\b")
 
     suspend fun executeVoiceToText(
         service: AutoClickerAccessibilityService?,
@@ -28,7 +30,7 @@ object VoiceToTextEngine {
             return false
         }
 
-        // 1. Configurable delay before click
+        // 1. User-configured delay before search & click
         if (delayBeforeClickMs > 0) {
             delay(delayBeforeClickMs)
         }
@@ -38,14 +40,14 @@ object VoiceToTextEngine {
         var currentAttempt = 0
         val maxAttempts = retryCount.coerceAtLeast(1)
 
-        // 2. Retry loop for locating the "A" button beside the latest customer voice message
+        // 2. Retry loop: Search strictly for the "A" button inside the latest customer voice message
         while (currentAttempt < maxAttempts && (System.currentTimeMillis() - startTime) < searchTimeoutMs) {
             currentAttempt++
             val root = service.rootInActiveWindow
             if (root != null) {
                 targetAButton = findLatestCustomerVoiceTranscribeButton(root, service)
                 if (targetAButton != null) {
-                    Log.d(TAG, "Found 'A' transcribe button on attempt $currentAttempt")
+                    Log.d(TAG, "Found valid 'A' transcribe button on attempt $currentAttempt")
                     break
                 }
             }
@@ -55,29 +57,26 @@ object VoiceToTextEngine {
         }
 
         if (targetAButton == null) {
-            Log.w(TAG, "$VOICE_TRANSCRIBE_NOT_FOUND: Could not locate 'A' button beside latest customer voice message after $currentAttempt attempts")
-            // Return false gracefully so macro continues to the next action without stopping or crashing
+            Log.w(TAG, "$VOICE_TRANSCRIBE_NOT_FOUND: Could not locate verified 'A' button inside latest customer voice message after $currentAttempt attempts")
+            // Return false gracefully without clicking any wrong UI element, continuing macro flow safely
             return false
         }
 
-        // 3. Click the detected "A" button exactly ONCE
-        val clickSuccess = clickNodeOrLocation(service, targetAButton)
+        // 3. Click ONLY the exact center / node of the verified "A" button exactly ONCE
+        val clickSuccess = clickNodeExactCenter(service, targetAButton)
         if (!clickSuccess) {
             Log.w(TAG, "$VOICE_TRANSCRIBE_NOT_FOUND: Click action on 'A' button failed")
             return false
         }
 
-        Log.d(TAG, "Successfully clicked 'A' transcribe button. Waiting ${waitAfterClickMs}ms after click.")
+        Log.d(TAG, "Successfully clicked 'A' transcribe button once. Waiting ${waitAfterClickMs}ms after click.")
 
         // 4. Configurable wait after clicking
         if (waitAfterClickMs > 0) {
             delay(waitAfterClickMs)
         }
 
-        // 5. Verify transcription started
-        verifyTranscriptionStarted(service)
-
-        Log.d(TAG, "Voice To Text operation completed successfully. Automatically continuing to next macro action.")
+        Log.d(TAG, "Voice To Text action completed successfully. Continuing to next macro action.")
         return true
     }
 
@@ -89,7 +88,7 @@ object VoiceToTextEngine {
         val screenWidth = displayMetrics.widthPixels
         val screenHeight = displayMetrics.heightPixels
 
-        // Step 1: Collect all nodes with screen bounds
+        // Step 1: Collect all valid nodes with screen bounds
         val allNodes = mutableListOf<NodeInfoWrapper>()
         fun collectNodes(node: AccessibilityNodeInfo?) {
             if (node == null) return
@@ -106,11 +105,11 @@ object VoiceToTextEngine {
 
         if (allNodes.isEmpty()) return null
 
-        // Step 2: Identify Customer Voice Message Containers / Anchors
-        // Rule: Customer messages are on the LEFT side of screen (left < screenWidth * 0.45 or centerX < screenWidth * 0.50)
-        // Rule: Must be a VOICE message
-        // Filter out: My messages (right side), text messages, stickers, images, videos, calls, blocked notifications
-        val customerVoiceAnchors = allNodes.filter { wrapper ->
+        // Step 2: Identify Customer Voice Message Containers
+        // Customer messages are left-aligned (left < 45% screenWidth or centerX < 50% screenWidth)
+        // Must contain voice indicators (duration regex or play button/audio view ID)
+        // Strictly exclude: My messages (right side), text messages, stickers, images, videos, calls, blocked call notifications
+        val customerVoiceContainers = allNodes.filter { wrapper ->
             val rect = wrapper.bounds
             val isLeftSide = rect.left < (screenWidth * 0.45f) || rect.centerX() < (screenWidth * 0.50f)
 
@@ -120,16 +119,17 @@ object VoiceToTextEngine {
             val desc = wrapper.node.contentDescription?.toString()?.lowercase() ?: ""
             val viewId = wrapper.node.viewIdResourceName?.lowercase() ?: ""
 
-            // Exclude non-voice items
-            val isIgnoredType = desc.contains("sticker") || desc.contains("photo") || desc.contains("image") ||
+            // Strict exclusion of non-voice items
+            val isIgnored = desc.contains("sticker") || desc.contains("photo") || desc.contains("image") ||
                     desc.contains("video") || desc.contains("missed call") || desc.contains("blocked") ||
                     desc.contains("call ended") || text.contains("missed call") || text.contains("blocked") ||
-                    viewId.contains("sticker") || viewId.contains("avatar")
+                    text.contains("sticker") || viewId.contains("sticker") || viewId.contains("avatar") ||
+                    viewId.contains("profile")
 
-            if (isIgnoredType) return@filter false
+            if (isIgnored) return@filter false
 
-            // Check voice message indicators
-            val hasDuration = DURATION_REGEX.matcher(wrapper.node.text ?: "").find() ||
+            // Voice message detection logic
+            val hasAudioDuration = DURATION_REGEX.matcher(wrapper.node.text ?: "").find() ||
                     DURATION_REGEX.matcher(wrapper.node.contentDescription ?: "").find()
 
             val hasVoiceKeywords = desc.contains("voice") || desc.contains("audio") || desc.contains("sound") ||
@@ -137,114 +137,157 @@ object VoiceToTextEngine {
 
             val isPlayButton = desc.contains("play") || text == "play" || viewId.contains("play")
 
-            val hasAInSameItem = text == "a" || desc == "a" || desc.contains("transcribe") || text.contains("transcribe")
+            val containsAButton = isAButtonTextOrDesc(text, desc, viewId)
 
-            hasDuration || (hasVoiceKeywords && isPlayButton) || (isLeftSide && hasAInSameItem)
+            hasAudioDuration || (hasVoiceKeywords && isPlayButton) || (isLeftSide && containsAButton)
         }
 
-        // Step 3: Find the LATEST (bottom-most) customer voice message anchor
-        val latestVoiceAnchor = customerVoiceAnchors.maxByOrNull { it.bounds.bottom }
+        // Step 3: Find the LATEST (bottom-most) customer voice message container
+        val latestCustomerVoiceContainer = customerVoiceContainers.maxByOrNull { it.bounds.bottom }
 
-        // Step 4: Locate the "A" button beside or inside this latest customer voice message
-        // Priority 1: Accessibility Node inside or vertically aligned with latestVoiceAnchor
-        if (latestVoiceAnchor != null) {
-            val anchorRect = latestVoiceAnchor.bounds
-            val topBound = anchorRect.top - 120
-            val bottomBound = anchorRect.bottom + 120
+        // Step 4: Search ONLY inside / vertically aligned with this latest customer voice message for the "A" button
+        if (latestCustomerVoiceContainer != null) {
+            val containerRect = latestCustomerVoiceContainer.bounds
+            val topMargin = 80
+            val bottomMargin = 80
 
-            val candidateAInAnchor = allNodes.filter { wrapper ->
+            // Filter candidate nodes inside the row
+            val candidateAButtonsInRow = allNodes.filter { wrapper ->
                 val r = wrapper.bounds
-                val isVerticallyAligned = r.top >= topBound && r.bottom <= bottomBound
-                val isLeftSide = r.left < (screenWidth * 0.70f)
+                // Must be vertically aligned with the latest customer voice message bubble
+                val isVerticallyAligned = r.top >= (containerRect.top - topMargin) && r.bottom <= (containerRect.bottom + bottomMargin)
+                // Must be inside customer area (left < 75% screen width)
+                val isLeftArea = r.left < (screenWidth * 0.75f)
 
-                if (isVerticallyAligned && isLeftSide) {
-                    val t = wrapper.node.text?.toString()?.trim() ?: ""
-                    val d = wrapper.node.contentDescription?.toString()?.trim() ?: ""
-                    val id = wrapper.node.viewIdResourceName?.lowercase() ?: ""
+                if (!isVerticallyAligned || !isLeftArea) return@filter false
 
-                    isExactOrSubtleTranscribeButton(t, d, id)
-                } else false
-            }.minByOrNull { Math.abs(it.bounds.centerY() - anchorRect.centerY()) }
+                // Must NOT be an excluded element (profile photo, sticker, play button, emoji, waveform, message background)
+                if (isExcludedElement(wrapper, containerRect, screenWidth)) return@filter false
 
-            if (candidateAInAnchor != null) {
-                return candidateAInAnchor.node
+                val text = wrapper.node.text?.toString()?.trim() ?: ""
+                val desc = wrapper.node.contentDescription?.toString()?.trim() ?: ""
+                val viewId = wrapper.node.viewIdResourceName?.lowercase() ?: ""
+
+                // Verify "A" transcribe button attributes
+                isAButtonTextOrDesc(text, desc, viewId)
+            }
+
+            // Pick candidate closest to the right end of the voice bubble row (where transcribe 'A' button resides)
+            val bestAInRow = candidateAButtonsInRow.minByOrNull { Math.abs(it.bounds.centerY() - containerRect.centerY()) }
+            if (bestAInRow != null) {
+                return bestAInRow.node
             }
         }
 
-        // Priority 2: OCR / Text Detection Fallback (bottom-most "A" button on left side of screen)
-        val allAButtonsOnLeft = allNodes.filter { wrapper ->
+        // Step 5: Strict Fallback - Search screen for bottom-most verified "A" transcribe button on left side
+        val verifiedAButtonsOnLeft = allNodes.filter { wrapper ->
             val r = wrapper.bounds
             val isLeftSide = r.left < (screenWidth * 0.65f)
             if (!isLeftSide) return@filter false
 
-            val t = wrapper.node.text?.toString()?.trim() ?: ""
-            val d = wrapper.node.contentDescription?.toString()?.trim() ?: ""
-            val id = wrapper.node.viewIdResourceName?.lowercase() ?: ""
+            if (isExcludedElement(wrapper, null, screenWidth)) return@filter false
 
-            isExactOrSubtleTranscribeButton(t, d, id)
+            val text = wrapper.node.text?.toString()?.trim() ?: ""
+            val desc = wrapper.node.contentDescription?.toString()?.trim() ?: ""
+            val viewId = wrapper.node.viewIdResourceName?.lowercase() ?: ""
+
+            isAButtonTextOrDesc(text, desc, viewId)
         }
 
-        val latestAButton = allAButtonsOnLeft.maxByOrNull { it.bounds.bottom }
-        if (latestAButton != null) {
-            return latestAButton.node
+        val latestVerifiedAButton = verifiedAButtonsOnLeft.maxByOrNull { it.bounds.bottom }
+        if (latestVerifiedAButton != null) {
+            return latestVerifiedAButton.node
         }
 
-        // Priority 3: Fallback structural icon search beside latestVoiceAnchor
-        if (latestVoiceAnchor != null) {
-            val anchorRect = latestVoiceAnchor.bounds
-            val fallbackIconNode = allNodes.filter { wrapper ->
-                val r = wrapper.bounds
-                val isNear = Math.abs(r.centerY() - anchorRect.centerY()) < 100
-                val isAdjacent = r.left < (screenWidth * 0.50f) && (r.width() in 20..150) && (r.height() in 20..150)
-                val isClickable = wrapper.node.isClickable || wrapper.node.className?.contains("Button") == true || wrapper.node.className?.contains("ImageView") == true
-                isNear && isAdjacent && isClickable
-            }.minByOrNull { Math.abs(it.bounds.centerX() - anchorRect.right) }
-
-            if (fallbackIconNode != null) {
-                return fallbackIconNode.node
-            }
-        }
-
+        // High confidence constraint: If no node strictly satisfies the "A" transcribe button criteria, return null
         return null
     }
 
-    private fun isExactOrSubtleTranscribeButton(
-        text: String,
-        contentDesc: String,
-        viewId: String
-    ): Boolean {
-        val lowerD = contentDesc.lowercase()
+    private fun isAButtonTextOrDesc(text: String, desc: String, viewId: String): Boolean {
+        val lowerText = text.lowercase()
+        val lowerDesc = desc.lowercase()
 
-        // Exact match for "A" or "a" transcribe button
-        if (text == "A" || text == "a" || lowerD == "a" || lowerD == "transcribe") {
+        // Match exact "A" or "a" text / content description
+        if (text == "A" || text == "a" || lowerDesc == "a" || lowerText == "a") {
             return true
         }
 
-        // Transcribe keywords
-        if (lowerD.contains("transcribe") || lowerD.contains("speech to text") || lowerD.contains("voice to text") ||
-            text.contains("transcribe") || lowerD.contains("ভয়েস") || text.contains("অনুবাদ")
+        // Match transcribe / speech-to-text keywords
+        if (lowerDesc.contains("transcribe") || lowerText.contains("transcribe") ||
+            lowerDesc.contains("voice to text") || lowerText.contains("voice to text") ||
+            lowerDesc.contains("speech to text") || lowerText.contains("speech to text") ||
+            lowerDesc.contains("ভয়েস") || lowerText.contains("অনুবাদ")
         ) {
             return true
         }
 
-        // View ID checks
-        if (viewId.contains("transcribe") || viewId.contains("speech_to_text") || viewId.contains("voice_to_text")) {
+        // Match view IDs
+        if (viewId.contains("transcribe") || viewId.contains("v2t") || viewId.contains("speech_to_text")) {
             return true
         }
 
         return false
     }
 
-    private suspend fun clickNodeOrLocation(
+    private fun isExcludedElement(
+        wrapper: NodeInfoWrapper,
+        containerRect: Rect?,
+        screenWidth: Int
+    ): Boolean {
+        val rect = wrapper.bounds
+        val text = wrapper.node.text?.toString()?.trim() ?: ""
+        val desc = wrapper.node.contentDescription?.toString()?.trim() ?: ""
+        val viewId = wrapper.node.viewIdResourceName?.lowercase() ?: ""
+        val className = wrapper.node.className?.toString()?.lowercase() ?: ""
+
+        val combined = "$text $desc $viewId $className".lowercase()
+
+        // ❌ Exclude Profile Photo / Avatar (usually far left, e.g. left < 15% screenWidth or avatar view ID)
+        if (rect.left < (screenWidth * 0.15f) && (viewId.contains("avatar") || viewId.contains("photo") || viewId.contains("profile") || combined.contains("avatar"))) {
+            return true
+        }
+
+        // ❌ Exclude Stickers, Photos, Videos, Emoji Reactions
+        if (combined.contains("sticker") || combined.contains("photo") || combined.contains("video") ||
+            combined.contains("reaction") || combined.contains("emoji") || combined.contains("like")
+        ) {
+            return true
+        }
+
+        // ❌ Exclude Play button & Waveform
+        if (combined.contains("play") || combined.contains("pause") || combined.contains("waveform") || combined.contains("seek")) {
+            return true
+        }
+
+        // ❌ Exclude Timestamp / Duration text
+        if (DURATION_REGEX.matcher(text).matches() || TIMESTAMP_REGEX.matcher(text).matches()) {
+            return true
+        }
+
+        // ❌ Exclude Chat background / full-width container
+        if (rect.width() > (screenWidth * 0.85f)) {
+            return true
+        }
+
+        // ❌ Exclude extremely tiny invisible elements (< 10px)
+        if (rect.width() < 10 || rect.height() < 10) {
+            return true
+        }
+
+        return false
+    }
+
+    private suspend fun clickNodeExactCenter(
         service: AutoClickerAccessibilityService,
         node: AccessibilityNodeInfo
     ): Boolean {
+        // Try performAction CLICK on node or clickable parent first
         var success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         if (!success) {
             var curr = node.parent
             var depth = 0
             while (curr != null && depth < 3) {
-                if (curr.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
+                if (curr.isClickable && curr.performAction(AccessibilityNodeInfo.ACTION_CLICK)) {
                     success = true
                     break
                 }
@@ -253,22 +296,18 @@ object VoiceToTextEngine {
             }
         }
 
+        // If accessibility click is not handled directly by app, perform exact center tap gesture on bounds
         if (!success) {
             val rect = Rect()
             node.getBoundsInScreen(rect)
             if (rect.width() > 0 && rect.height() > 0) {
                 val cx = rect.centerX().toFloat()
                 val cy = rect.centerY().toFloat()
-                success = service.performTap(cx, cy, 60L)
+                success = service.performTap(cx, cy, 50L)
             }
         }
 
         return success
-    }
-
-    private fun verifyTranscriptionStarted(service: AutoClickerAccessibilityService) {
-        val root = service.rootInActiveWindow ?: return
-        Log.d(TAG, "Transcription post-click verification scan completed")
     }
 
     private data class NodeInfoWrapper(
